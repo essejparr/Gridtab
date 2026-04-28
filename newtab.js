@@ -499,6 +499,36 @@
     for (const fav of favorites) {
       grid.appendChild(buildTile(fav));
     }
+    // Trailing "+" tile — same square shape, never draggable, always last.
+    grid.appendChild(buildAddTile());
+  }
+
+  /**
+   * Builds the trailing "+" tile that opens the add-favorite modal.
+   * Inherits the grid's sizing rules so it auto-matches every tile, but
+   * carries its own muted styling so it reads as an action, not a site.
+   */
+  function buildAddTile() {
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'tile tile-add';
+    tile.setAttribute('aria-label', 'Add favorite');
+    // Explicitly not draggable — sits at the end regardless of reordering.
+    tile.draggable = false;
+
+    const plus = document.createElement('span');
+    plus.className = 'tile-add-plus';
+    plus.textContent = '+';
+    plus.setAttribute('aria-hidden', 'true');
+    tile.appendChild(plus);
+
+    tile.addEventListener('click', openAddModal);
+
+    // Allow other tiles to be dropped onto/around the add tile without
+    // it absorbing the drop or showing a highlight.
+    tile.addEventListener('dragover', (e) => e.preventDefault());
+
+    return tile;
   }
 
   function buildTile(fav) {
