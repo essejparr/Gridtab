@@ -705,6 +705,150 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   transform: scale(1.1);
 }
 
+/* ---------- Folder tile ---------- */
+/* The folder tile reuses the .tile sizing/shape rules. Its color tint
+   shows through a low-opacity overlay so the tile is identifiable as
+   a folder at a glance. The 2x2 preview hints at its contents. */
+.tile-folder {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  /* The folder color is mixed in with low opacity. When color is unset
+     we fall back to a neutral surface. */
+  --folder-color: transparent;
+  position: relative;
+}
+.tile-folder::before {
+  /* Color tint overlay — sits behind the preview, on top of surface. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--folder-color);
+  opacity: .12;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.tile-folder:hover::before { opacity: .18; }
+.tile-folder.is-open::before { opacity: .22; }
+.tile-folder.is-open {
+  border-color: var(--folder-color, var(--accent));
+}
+
+.folder-preview {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6%;
+  padding: 14%;
+  width: 100%;
+  height: 100%;
+}
+.folder-preview-cell {
+  background: var(--bg);
+  border-radius: 22%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.folder-preview-cell img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+.folder-preview-letter {
+  font-weight: 700;
+  font-size: clamp(10px, 10cqw, 22px);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Children of an open folder get a colored outline ring so users can
+   see at a glance which tiles belong to which folder. */
+.tile.is-folder-child {
+  --folder-color: transparent;
+  box-shadow:
+    0 0 0 2px var(--folder-color, transparent),
+    var(--shadow-sm);
+}
+.tile.is-folder-child:hover {
+  box-shadow:
+    0 0 0 2px var(--folder-color, transparent),
+    var(--shadow-lg);
+}
+/* When the folder color is "default" (no override), show a soft accent
+   ring so children are still visually grouped even without a color. */
+.tile.is-folder-child[style*="--folder-color: transparent"],
+.tile.is-folder-child:not([style*="--folder-color"]) {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+}
+
+/* Drop-slot tile inside an open folder — placeholder for "drop to add". */
+.tile-folder-drop {
+  background: transparent;
+  border: 2px dashed var(--folder-color, var(--border-strong));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+  opacity: .55;
+  transition: opacity .15s ease, border-color .15s ease, background .15s ease;
+}
+.tile-folder-drop:hover,
+.tile-folder-drop.is-drop-target {
+  opacity: 1;
+  background: color-mix(in srgb, var(--folder-color, var(--accent)) 12%, transparent);
+}
+.tile-folder-drop-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Drop-target highlight for tiles in "merge zone" — center half of a
+   tile being hovered means "merge into a folder". */
+.tile.is-merge-target {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 0 0 3px var(--accent), var(--shadow-lg);
+  border-color: var(--accent);
+}
+
+/* ---------- Modal tabs (Favorite / Folder) ---------- */
+.modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+.modal-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.modal-tab:hover { color: var(--text); }
+.modal-tab[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
 /* ---------- Empty state ---------- */
 
 .empty {

@@ -80,11 +80,22 @@
     </section>
   </main>
 
-  <!-- Modal for adding / editing a favorite. -->
+  <!-- Modal for adding / editing a favorite or folder. -->
   <div id="modal" class="modal" hidden aria-hidden="true">
     <div class="modal-backdrop" data-close="true"></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <h2 id="modalTitle" class="modal-title">Add favorite</h2>
+      <h2 id="modalTitle" class="modal-title">Add</h2>
+
+      <!-- Tab switcher visible only when creating something new. Hidden
+           when editing (the kind is fixed by what was clicked). -->
+      <div id="modalTabs" class="modal-tabs" role="tablist">
+        <button type="button" class="modal-tab" data-modal-tab="favorite"
+                role="tab" aria-selected="true">Favorite</button>
+        <button type="button" class="modal-tab" data-modal-tab="folder"
+                role="tab" aria-selected="false">Folder</button>
+      </div>
+
+      <!-- Favorite form -->
       <form id="favoriteForm" class="form" novalidate>
         <label class="field">
           <span class="field-label">Title</span>
@@ -135,6 +146,32 @@
             </button>
             <button type="submit" class="btn btn-primary">
               <span id="saveLabel">Save</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Folder form -->
+      <form id="folderForm" class="form" novalidate hidden>
+        <label class="field">
+          <span class="field-label">Folder name</span>
+          <input id="folderTitleInput" type="text" class="input"
+                 placeholder="e.g. News" maxlength="40" required />
+        </label>
+        <div class="field">
+          <span class="field-label">Color</span>
+          <div id="folderColorGrid" class="color-menu-grid"></div>
+        </div>
+        <div class="modal-actions">
+          <button id="folderDeleteBtn" type="button" class="btn btn-danger" hidden>
+            Delete folder
+          </button>
+          <div class="modal-actions-right">
+            <button type="button" class="btn btn-ghost" data-close="true">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <span id="folderSaveLabel">Save</span>
             </button>
           </div>
         </div>

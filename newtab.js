@@ -149,7 +149,7 @@
   const emptyAddBtn    = document.getElementById('emptyAddBtn');
   const modal          = document.getElementById('modal');
   const modalTitle     = document.getElementById('modalTitle');
-  const form           = document.getElementById('favoriteForm');
+  const favoriteForm   = document.getElementById('favoriteForm');
   const titleInput     = document.getElementById('titleInput');
   const urlInput       = document.getElementById('urlInput');
   const urlError       = document.getElementById('urlError');
@@ -179,14 +179,24 @@
   const iconClearBtn   = document.getElementById('iconClearBtn');
   const iconUrlInput   = document.getElementById('iconUrlInput');
   const iconError      = document.getElementById('iconError');
+  // Folder form (lives in the same modal, second tab).
+  const modalTabs      = document.getElementById('modalTabs');
+  const folderForm     = document.getElementById('folderForm');
+  const folderTitleInput = document.getElementById('folderTitleInput');
+  const folderColorGrid  = document.getElementById('folderColorGrid');
+  const folderSaveLabel  = document.getElementById('folderSaveLabel');
+  const folderDeleteBtn  = document.getElementById('folderDeleteBtn');
 
   // In-memory state.
   let favorites = [];
   let settings  = { ...DEFAULT_SETTINGS };
   let editingId = null;
+  let editingKind = 'favorite'; // 'favorite' | 'folder' — what the modal is editing
   // Holds the custom icon (data URL or http(s) URL) for the favorite
   // currently being added/edited. Null means "no custom icon".
   let pendingCustomIcon = null;
+  // Pending folder color while editing in the modal.
+  let pendingFolderColor = 'default';
 
   // -----------------------------------------------------------------------
   // Storage helpers (chrome.storage.local)
@@ -615,11 +625,164 @@
     grid.hidden = false;
     emptyState.hidden = true;
 
-    for (const fav of favorites) {
-      grid.appendChild(buildTile(fav));
+    // Top-level pass. For folders, render the folder tile, then if open
+    // render its children inline immediately after (each child marked
+    // with the folder's color so users can see the grouping).
+    for (const item of favorites) {
+      if (kindOf(item) === 'folder') {
+        grid.appendChild(buildFolderTile(item));
+        if (item.open) {
+          for (const child of item.items || []) {
+            grid.appendChild(buildTile(child, { folderId: item.id, folderColor: item.color }));
+          }
+          // Drop slot — only when folder is open. Lets users drop tiles
+          // INTO the folder by dropping after the last child.
+          grid.appendChild(buildFolderDropSlot(item));
+        }
+      } else {
+        grid.appendChild(buildTile(item));
+      }
     }
-    // Trailing "+" tile — same square shape, never draggable, always last.
+    // Trailing "+" tile — always last.
     grid.appendChild(buildAddTile());
+  }
+
+  /**
+   * Build a folder tile. Visually shows the folder's color as a tinted
+   * background plus a 2x2 mini-grid of the first four child favicons.
+   * Click toggles open/closed state.
+   */
+  function buildFolderTile(folder) {
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'tile tile-folder';
+    tile.dataset.id = folder.id;
+    tile.dataset.kind = 'folder';
+    tile.draggable = true;
+    if (folder.open) tile.classList.add('is-open');
+
+    const colorBg = folderColorBg(folder.color);
+    if (colorBg) tile.style.setProperty('--folder-color', colorBg);
+
+    tile.setAttribute('aria-label',
+      `Folder: ${folder.title} (${folder.items?.length || 0} items)`);
+    tile.setAttribute('aria-expanded', folder.open ? 'true' : 'false');
+
+    // Edit button (pencil) — top-right, like favorite tiles.
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'tile-edit';
+    editBtn.setAttribute('aria-label', `Edit ${folder.title}`);
+    editBtn.textContent = '✎';
+    editBtn.draggable = false;
+    editBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openEditFolderModal(folder.id);
+    });
+
+    // 2x2 mini-grid of child favicons. Empty cells stay blank.
+    const preview = document.createElement('div');
+    preview.className = 'folder-preview';
+    const previewItems = (folder.items || []).slice(0, 4);
+    for (let i = 0; i < 4; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'folder-preview-cell';
+      const child = previewItems[i];
+      if (child) {
+        const img = document.createElement('img');
+        img.alt = '';
+        img.referrerPolicy = 'no-referrer';
+        const sources = faviconSources(child);
+        let idx = 0;
+        img.src = sources[0];
+        img.onerror = () => {
+          idx += 1;
+          if (idx < sources.length) { img.src = sources[idx]; return; }
+          // All sources failed — show a tiny letter.
+          cell.innerHTML = '';
+          const letter = document.createElement('span');
+          letter.className = 'folder-preview-letter';
+          letter.textContent = (child.title || '?').charAt(0);
+          cell.appendChild(letter);
+        };
+        cell.appendChild(img);
+      }
+      preview.appendChild(cell);
+    }
+
+    // Hover tooltip (folder name).
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tile-tooltip';
+    tooltip.setAttribute('aria-hidden', 'true');
+    const tipTitle = document.createElement('div');
+    tipTitle.className = 'tile-tooltip-title';
+    tipTitle.textContent = folder.title;
+    const tipMeta = document.createElement('div');
+    tipMeta.className = 'tile-tooltip-domain';
+    tipMeta.textContent = `${folder.items?.length || 0} item${folder.items?.length === 1 ? '' : 's'}`;
+    tooltip.appendChild(tipTitle);
+    tooltip.appendChild(tipMeta);
+
+    tile.appendChild(tooltip);
+    tile.appendChild(editBtn);
+    tile.appendChild(preview);
+
+    // Click toggles open/closed (but not when clicking the edit button).
+    tile.addEventListener('click', async (e) => {
+      if (e.target === editBtn || editBtn.contains(e.target)) return;
+      await toggleFolderOpen(folder.id);
+    });
+
+    // Drag-and-drop for the folder itself + accepting drops onto it.
+    wireFolderTileDragHandlers(tile, folder);
+
+    return tile;
+  }
+
+  /**
+   * Drop slot rendered after the last child of an open folder. It's
+   * sized like a tile but rendered as a dashed "drop here" placeholder.
+   * Dropping a favorite onto it adds that favorite to the folder.
+   */
+  function buildFolderDropSlot(folder) {
+    const slot = document.createElement('div');
+    slot.className = 'tile tile-folder-drop';
+    slot.dataset.folderId = folder.id;
+    const colorBg = folderColorBg(folder.color);
+    if (colorBg) slot.style.setProperty('--folder-color', colorBg);
+    const label = document.createElement('span');
+    label.className = 'tile-folder-drop-label';
+    label.textContent = 'Drop to add';
+    slot.appendChild(label);
+
+    slot.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      slot.classList.add('is-drop-target');
+    });
+    slot.addEventListener('dragleave', () => slot.classList.remove('is-drop-target'));
+    slot.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      slot.classList.remove('is-drop-target');
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId) return;
+      const previous = JSON.parse(JSON.stringify(favorites));
+      const ok = addToFolder(draggedId, folder.id);
+      if (!ok) return;
+      const result = await saveFavorites(favorites);
+      if (!result.ok) { favorites = previous; }
+      render();
+    });
+
+    return slot;
+  }
+
+  /** Resolve a folder color id to its CSS background value (or null). */
+  function folderColorBg(colorId) {
+    const color = BUTTON_COLORS.find((c) => c.id === colorId);
+    return color && color.bg ? color.bg : null;
   }
 
   /**
@@ -632,7 +795,6 @@
     tile.type = 'button';
     tile.className = 'tile tile-add';
     tile.setAttribute('aria-label', 'Add favorite');
-    // Explicitly not draggable — sits at the end regardless of reordering.
     tile.draggable = false;
 
     const plus = document.createElement('span');
@@ -642,15 +804,82 @@
     tile.appendChild(plus);
 
     tile.addEventListener('click', openAddModal);
-
-    // Allow other tiles to be dropped onto/around the add tile without
-    // it absorbing the drop or showing a highlight.
     tile.addEventListener('dragover', (e) => e.preventDefault());
 
     return tile;
   }
 
-  function buildTile(fav) {
+  async function toggleFolderOpen(folderId) {
+    const folder = favorites.find((f) => f.id === folderId);
+    if (!folder || kindOf(folder) !== 'folder') return;
+    const previous = JSON.parse(JSON.stringify(favorites));
+    folder.open = !folder.open;
+    const result = await saveFavorites(favorites);
+    if (!result.ok) { favorites = previous; }
+    render();
+  }
+
+  /**
+   * Wire drag/drop on a folder tile:
+   *  - dragstart: identical to favorite tiles (lets it be reordered).
+   *  - drop target: accepts a favorite drop → adds the favorite to the
+   *    folder. Does NOT accept folder drops (no nested folders).
+   */
+  function wireFolderTileDragHandlers(tile, folder) {
+    tile.addEventListener('dragstart', (e) => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', folder.id);
+      setTimeout(() => {
+        tile.classList.add('is-dragging');
+        document.body.classList.add('is-dragging');
+      }, 0);
+    });
+    tile.addEventListener('dragend', () => {
+      tile.classList.remove('is-dragging');
+      document.body.classList.remove('is-dragging');
+      document.querySelectorAll('.tile.is-drop-target')
+        .forEach((el) => el.classList.remove('is-drop-target'));
+    });
+    tile.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (!tile.classList.contains('is-dragging')) {
+        tile.classList.add('is-drop-target');
+      }
+    });
+    tile.addEventListener('dragleave', () => {
+      tile.classList.remove('is-drop-target');
+    });
+    tile.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.remove('is-drop-target');
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId || draggedId === folder.id) return;
+
+      const dragged = findItemById(draggedId);
+      if (!dragged) return;
+
+      const previous = JSON.parse(JSON.stringify(favorites));
+      let mutated = false;
+
+      if (kindOf(dragged.item) === 'folder') {
+        // Folder dropped onto folder — reorder, don't nest.
+        reorderFavorites(draggedId, folder.id);
+        mutated = true;
+      } else {
+        // Favorite dropped onto folder — add to it.
+        mutated = addToFolder(draggedId, folder.id);
+      }
+      if (!mutated) return;
+      const result = await saveFavorites(favorites);
+      if (!result.ok) { favorites = previous; }
+      render();
+    });
+  }
+
+
+  function buildTile(fav, ctx) {
     // The tile itself is an <a> so click + middle-click + keyboard "Enter"
     // all work naturally. Per spec, clicking opens in the current tab.
     const tile = document.createElement('a');
@@ -660,14 +889,18 @@
     tile.draggable = true;
     tile.setAttribute('aria-label', `${fav.title} — ${getDomain(fav.url)}`);
 
+    // If this tile is a child of an open folder, mark it visually so
+    // users can see the grouping at a glance, and tag it for drop logic.
+    if (ctx && ctx.folderId) {
+      tile.classList.add('is-folder-child');
+      tile.dataset.folderId = ctx.folderId;
+      if (ctx.folderColor) tile.style.setProperty('--folder-color', ctx.folderColor);
+    }
+
     // --- Drag-and-drop wiring ---
-    // The tile being dragged stores its id; dragover/drop on other tiles
-    // reorders the favorites array and re-renders.
     tile.addEventListener('dragstart', (e) => {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', fav.id);
-      // Slight delay so the browser captures the drag image *before* we
-      // dim the source tile. Without this the drag preview also dims.
       setTimeout(() => {
         tile.classList.add('is-dragging');
         document.body.classList.add('is-dragging');
@@ -677,38 +910,88 @@
     tile.addEventListener('dragend', () => {
       tile.classList.remove('is-dragging');
       document.body.classList.remove('is-dragging');
-      // Clear any lingering drop-target highlights on tiles.
-      document.querySelectorAll('.tile.is-drop-target')
-        .forEach((el) => el.classList.remove('is-drop-target'));
+      document.querySelectorAll('.tile.is-drop-target, .tile.is-merge-target')
+        .forEach((el) => el.classList.remove('is-drop-target', 'is-merge-target'));
     });
 
     tile.addEventListener('dragover', (e) => {
-      e.preventDefault(); // required to allow drop
+      e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      if (!tile.classList.contains('is-dragging')) {
-        tile.classList.add('is-drop-target');
-      }
+      if (tile.classList.contains('is-dragging')) return;
+      // Visual cue: center half of the tile = "merge into folder", outer
+      // half = "reorder before/after". We just toggle a class on the
+      // hovered tile so the user sees something meaningful.
+      const rect = tile.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const inMergeZone = offsetX > rect.width * 0.25 && offsetX < rect.width * 0.75;
+      tile.classList.toggle('is-merge-target', inMergeZone);
+      tile.classList.toggle('is-drop-target', !inMergeZone);
     });
 
     tile.addEventListener('dragleave', () => {
-      tile.classList.remove('is-drop-target');
+      tile.classList.remove('is-drop-target', 'is-merge-target');
     });
 
     tile.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      tile.classList.remove('is-drop-target');
+      const wasMerge = tile.classList.contains('is-merge-target');
+      tile.classList.remove('is-drop-target', 'is-merge-target');
 
       const draggedId = e.dataTransfer.getData('text/plain');
       const targetId  = fav.id;
       if (!draggedId || draggedId === targetId) return;
 
-      const previous = favorites.slice();
-      reorderFavorites(draggedId, targetId);
-      const result = await saveFavorites(favorites);
-      if (!result.ok) {
-        favorites = previous;
+      const dragged = findItemById(draggedId);
+      if (!dragged) return;
+
+      const previous = JSON.parse(JSON.stringify(favorites));
+      let mutated = false;
+
+      // Case A: this tile is INSIDE a folder. Drop semantics differ:
+      //  - if dragged is a top-level favorite, add it to this folder.
+      //  - if dragged is also from this folder, reorder within folder.
+      //  - if dragged is from a different folder, move it here.
+      if (ctx && ctx.folderId) {
+        const folder = favorites.find((f) => f.id === ctx.folderId);
+        if (!folder) return;
+        if (kindOf(dragged.item) === 'folder') return; // can't put folder in folder
+        if (dragged.parent && dragged.parent.id === ctx.folderId) {
+          // Reorder within the same folder.
+          const arr = folder.items;
+          const fromIdx = arr.findIndex((c) => c.id === draggedId);
+          const toIdx   = arr.findIndex((c) => c.id === targetId);
+          if (fromIdx !== -1 && toIdx !== -1) {
+            const [moved] = arr.splice(fromIdx, 1);
+            arr.splice(toIdx, 0, moved);
+            mutated = true;
+          }
+        } else {
+          // Move dragged from wherever it was into this folder.
+          mutated = addToFolder(draggedId, ctx.folderId);
+        }
       }
+      // Case B: this tile is at the top level. Folder vs. reorder by zone.
+      else {
+        if (wasMerge && kindOf(dragged.item) === 'favorite') {
+          // If the dragged favorite came from inside a folder, hoist it
+          // to the top level first so mergeIntoFolder can find it.
+          if (dragged.parent) removeFromFolder(draggedId);
+          mutated = mergeIntoFolder(draggedId, targetId);
+        } else {
+          // Otherwise reorder. If dragged is from inside a folder, first
+          // hoist it out so the reorder happens at the top level.
+          if (dragged.parent) {
+            removeFromFolder(draggedId);
+          }
+          reorderFavorites(draggedId, targetId);
+          mutated = true;
+        }
+      }
+
+      if (!mutated) return;
+      const result = await saveFavorites(favorites);
+      if (!result.ok) { favorites = previous; }
       render();
     });
 
@@ -789,41 +1072,82 @@
 
   function openAddModal() {
     editingId = null;
-    modalTitle.textContent = 'Add favorite';
+    editingKind = 'favorite';
+    modalTitle.textContent = 'Add';
     saveLabel.textContent = 'Save';
+    folderSaveLabel.textContent = 'Save';
     deleteBtn.hidden = true;
+    folderDeleteBtn.hidden = true;
     titleInput.value = '';
     urlInput.value = '';
+    folderTitleInput.value = '';
     setPendingCustomIcon(null);
+    setPendingFolderColor('default');
+    modalTabs.hidden = false; // tab switcher visible only when creating
+    setModalTab('favorite');
     showModal();
   }
 
   function openEditModal(id) {
-    const fav = favorites.find((f) => f.id === id);
-    if (!fav) return;
+    // Look up the item — it might be at top level or inside a folder.
+    const loc = findItemById(id);
+    if (!loc || kindOf(loc.item) !== 'favorite') return;
+    const fav = loc.item;
     editingId = id;
+    editingKind = 'favorite';
     modalTitle.textContent = 'Edit favorite';
     saveLabel.textContent = 'Save changes';
     deleteBtn.hidden = false;
     titleInput.value = fav.title;
     urlInput.value = fav.url;
     setPendingCustomIcon(fav.customIcon || null);
+    modalTabs.hidden = true; // can't switch kind while editing
+    setModalTab('favorite');
     showModal();
+  }
+
+  function openEditFolderModal(id) {
+    const folder = favorites.find((f) => f.id === id);
+    if (!folder || kindOf(folder) !== 'folder') return;
+    editingId = id;
+    editingKind = 'folder';
+    modalTitle.textContent = 'Edit folder';
+    folderSaveLabel.textContent = 'Save changes';
+    folderDeleteBtn.hidden = false;
+    folderTitleInput.value = folder.title;
+    setPendingFolderColor(folder.color || 'default');
+    modalTabs.hidden = true;
+    setModalTab('folder');
+    showModal();
+  }
+
+  /** Switch between Favorite and Folder forms inside the same modal. */
+  function setModalTab(tab) {
+    const isFolder = tab === 'folder';
+    favoriteForm.hidden = isFolder;
+    folderForm.hidden = !isFolder;
+    modalTabs.querySelectorAll('.modal-tab').forEach((btn) => {
+      btn.setAttribute('aria-selected',
+        btn.dataset.modalTab === tab ? 'true' : 'false');
+    });
+    setTimeout(() => {
+      (isFolder ? folderTitleInput : titleInput).focus();
+    }, 30);
   }
 
   function showModal() {
     clearError();
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
-    // Focus the first field for fast keyboard entry.
-    setTimeout(() => titleInput.focus(), 30);
   }
 
   function closeModal() {
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
     editingId = null;
+    editingKind = 'favorite';
     pendingCustomIcon = null;
+    pendingFolderColor = 'default';
   }
 
   function showError(msg) {
@@ -968,6 +1292,106 @@
     setPendingCustomIcon(null);
   });
 
+  // -----------------------------------------------------------------------
+  // Folder form
+  // -----------------------------------------------------------------------
+
+  function setPendingFolderColor(colorId) {
+    pendingFolderColor = colorId || 'default';
+    renderFolderColorGrid();
+  }
+
+  function renderFolderColorGrid() {
+    if (!folderColorGrid) return;
+    folderColorGrid.innerHTML = '';
+    for (const color of BUTTON_COLORS) {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'color-swatch';
+      swatch.title = color.name;
+      swatch.setAttribute('aria-checked',
+        pendingFolderColor === color.id ? 'true' : 'false');
+      if (color.id === 'default') {
+        // 'default' = no color override; show a neutral diagonal stripe.
+        swatch.style.background =
+          'repeating-linear-gradient(45deg, var(--border) 0 4px, transparent 4px 8px)';
+      } else {
+        swatch.style.background = color.bg;
+      }
+      swatch.addEventListener('click', (e) => {
+        e.preventDefault();
+        setPendingFolderColor(color.id);
+      });
+      folderColorGrid.appendChild(swatch);
+    }
+  }
+
+  // Tab clicks switch the modal between Favorite and Folder forms.
+  modalTabs.addEventListener('click', (e) => {
+    if (!(e.target instanceof HTMLElement)) return;
+    const tab = e.target.closest('[data-modal-tab]');
+    if (!tab) return;
+    setModalTab(tab.dataset.modalTab);
+  });
+
+  folderForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = folderTitleInput.value.trim();
+    if (!title) {
+      folderTitleInput.focus();
+      return;
+    }
+    const previous = JSON.parse(JSON.stringify(favorites));
+    if (editingKind === 'folder' && editingId) {
+      // Edit existing folder.
+      const folder = favorites.find((f) => f.id === editingId);
+      if (folder) {
+        folder.title = title;
+        folder.color = pendingFolderColor;
+      }
+    } else {
+      // Create new (empty) folder at the end of the top level, just
+      // before the trailing add tile.
+      favorites.push({
+        kind: 'folder',
+        id: generateId(),
+        title,
+        color: pendingFolderColor,
+        items: [],
+        open: false,
+      });
+    }
+    const result = await saveFavorites(favorites);
+    if (!result.ok) {
+      favorites = previous;
+      alert('Could not save changes. Please try again.');
+      return;
+    }
+    render();
+    closeModal();
+  });
+
+  folderDeleteBtn.addEventListener('click', async () => {
+    if (editingKind !== 'folder' || !editingId) return;
+    const folder = favorites.find((f) => f.id === editingId);
+    if (!folder) return;
+    const itemCount = folder.items?.length || 0;
+    const message = itemCount > 0
+      ? `Delete "${folder.title}" and its ${itemCount} item${itemCount === 1 ? '' : 's'}?`
+      : `Delete "${folder.title}"?`;
+    if (!confirm(message)) return;
+    const previous = JSON.parse(JSON.stringify(favorites));
+    favorites = favorites.filter((f) => f.id !== editingId);
+    const result = await saveFavorites(favorites);
+    if (!result.ok) {
+      favorites = previous;
+      alert('Could not save changes. Please try again.');
+      return;
+    }
+    render();
+    closeModal();
+  });
+
   async function handleSubmit(e) {
     e.preventDefault();
     clearError();
@@ -986,17 +1410,24 @@
     }
 
     // Snapshot favorites so we can roll back if the write fails (e.g.
-    // hitting the chrome.storage.local 10MB quota with custom icons).
-    const previous = favorites;
+    // Snapshot favorites so we can roll back if the write fails.
+    // Deep clone since folders can contain favorites that we may mutate.
+    const previous = JSON.parse(JSON.stringify(favorites));
 
     if (editingId) {
-      favorites = favorites.map((f) =>
-        f.id === editingId
-          ? { ...f, title, url: normalized, customIcon: pendingCustomIcon || null }
-          : f
-      );
+      // Find the favorite wherever it lives (top level or inside a folder).
+      const loc = findItemById(editingId);
+      if (loc && kindOf(loc.item) === 'favorite') {
+        Object.assign(loc.item, {
+          title,
+          url: normalized,
+          customIcon: pendingCustomIcon || null,
+        });
+      }
     } else {
+      // New favorite — append at the top level.
       favorites.push({
+        kind: 'favorite',
         id: generateId(),
         title,
         url: normalized,
@@ -1007,9 +1438,7 @@
 
     const result = await saveFavorites(favorites);
     if (!result.ok) {
-      // Roll back so the visible UI matches what's actually persisted.
       favorites = previous;
-      // Quota errors typically mention 'QUOTA' — give a friendly hint.
       const isQuota = /quota/i.test(result.error || '');
       showError(isQuota
         ? 'Out of storage space. Try removing custom icons from a few favorites first.'
@@ -1022,12 +1451,12 @@
 
   async function handleDelete() {
     if (!editingId) return;
-    // Simple confirm — keeps the UI lightweight and dependency-free.
-    const fav = favorites.find((f) => f.id === editingId);
+    const loc = findItemById(editingId);
+    const fav = loc ? loc.item : null;
     const ok = confirm(`Delete "${fav ? fav.title : 'this favorite'}"?`);
     if (!ok) return;
-    const previous = favorites;
-    favorites = favorites.filter((f) => f.id !== editingId);
+    const previous = JSON.parse(JSON.stringify(favorites));
+    removeItemById(editingId);
     const result = await saveFavorites(favorites);
     if (!result.ok) {
       favorites = previous;
@@ -1046,10 +1475,95 @@
     return 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   }
 
+  // -----------------------------------------------------------------------
+  // Data model helpers (favorites + folders)
+  // -----------------------------------------------------------------------
+  // Each item in `favorites` is either:
+  //   { kind: 'favorite', id, title, url, customIcon, ... }
+  //   { kind: 'folder',   id, title, color, items: [favorite, ...], open?: bool }
+  // Folders never contain folders. Items missing a `kind` field are
+  // treated as 'favorite' for back-compat with pre-folders data.
+
+  function kindOf(item) {
+    return item && item.kind === 'folder' ? 'folder' : 'favorite';
+  }
+
+  /** Find any item by id, returning {item, parent, index}. */
+  function findItemById(id) {
+    for (let i = 0; i < favorites.length; i++) {
+      const item = favorites[i];
+      if (item.id === id) return { item, parent: null, index: i };
+      if (kindOf(item) === 'folder') {
+        const childIdx = (item.items || []).findIndex((c) => c.id === id);
+        if (childIdx !== -1) {
+          return { item: item.items[childIdx], parent: item, index: childIdx };
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Remove an item from wherever it lives; returns the item or null. */
+  function removeItemById(id) {
+    const loc = findItemById(id);
+    if (!loc) return null;
+    if (loc.parent) loc.parent.items.splice(loc.index, 1);
+    else favorites.splice(loc.index, 1);
+    return loc.item;
+  }
+
+  /**
+   * Drop a favorite onto another favorite — merges them into a new
+   * folder at the target's position. Both items become children.
+   */
+  function mergeIntoFolder(draggedId, targetId) {
+    if (draggedId === targetId) return false;
+    const targetIndex = favorites.findIndex((f) => f.id === targetId);
+    const target = targetIndex !== -1 ? favorites[targetIndex] : null;
+    const dragged = favorites.find((f) => f.id === draggedId);
+    if (!target || !dragged) return false;
+    if (kindOf(target) !== 'favorite' || kindOf(dragged) !== 'favorite') return false;
+    const folder = {
+      kind: 'folder',
+      id: generateId(),
+      title: 'New folder',
+      color: 'default',
+      items: [target, dragged],
+      open: false,
+    };
+    favorites.splice(targetIndex, 1, folder);
+    const draggedIndex = favorites.indexOf(dragged);
+    if (draggedIndex !== -1) favorites.splice(draggedIndex, 1);
+    return true;
+  }
+
+  /** Move a favorite into an existing folder. */
+  function addToFolder(itemId, folderId) {
+    const folder = favorites.find((f) => f.id === folderId);
+    if (!folder || kindOf(folder) !== 'folder') return false;
+    if (itemId === folderId) return false;
+    const item = removeItemById(itemId);
+    if (!item || kindOf(item) !== 'favorite') return false;
+    folder.items = folder.items || [];
+    folder.items.push(item);
+    return true;
+  }
+
+  /** Move a favorite out of its folder, placing it after the folder. */
+  function removeFromFolder(itemId) {
+    const loc = findItemById(itemId);
+    if (!loc || !loc.parent) return false;
+    const folder = loc.parent;
+    const folderIndex = favorites.indexOf(folder);
+    const item = removeItemById(itemId);
+    if (!item) return false;
+    favorites.splice(folderIndex + 1, 0, item);
+    return true;
+  }
+
   /**
    * Mutate `favorites` in place, moving the dragged item to occupy the
-   * target's slot. The target shifts to make room — items between the two
-   * positions slide one step in the appropriate direction.
+   * target's slot. Top-level reorder only.
    */
   function reorderFavorites(draggedId, targetId) {
     const fromIndex = favorites.findIndex((f) => f.id === draggedId);
@@ -1109,7 +1623,7 @@
 
   addBtn.addEventListener('click', openAddModal);
   emptyAddBtn.addEventListener('click', openAddModal);
-  form.addEventListener('submit', handleSubmit);
+  favoriteForm.addEventListener('submit', handleSubmit);
   deleteBtn.addEventListener('click', handleDelete);
 
   // Backdrop / cancel buttons (any element with data-close="true").
