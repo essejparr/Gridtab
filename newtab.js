@@ -166,13 +166,25 @@
   }
 
   /**
-   * Use Google's public favicon service to fetch a small favicon for a domain.
-   * This avoids needing the "favicon" host permission. If the request fails,
-   * the <img>'s onerror handler falls back to a letter avatar.
+   * Returns an ordered list of favicon URLs to try for a given site.
+   * The <img> in buildTile walks the list on each onerror until one
+   * loads, then falls back to a letter avatar if all fail.
+   *
+   * Different services return different quality:
+   *   - DuckDuckGo often returns Apple touch icons (higher res) for sites
+   *     that have them, but smaller icons for sites that don't.
+   *   - Google's s2/favicons is the most consistent but caps at whatever
+   *     the site advertises — small for sites like X/Twitter or GitHub
+   *     that only ship low-res favicons.
+   * We try DuckDuckGo first because it tends to win on big-brand sites
+   * (the ones users add most often), then Google as a reliable fallback.
    */
-  function faviconUrl(urlStr) {
-    const domain = getDomain(urlStr);
-    return `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`;
+  function faviconSources(urlStr) {
+    const domain = encodeURIComponent(getDomain(urlStr));
+    return [
+      `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      `https://www.google.com/s2/favicons?sz=256&domain=${domain}`,
+    ];
   }
 
   // -----------------------------------------------------------------------
@@ -279,9 +291,19 @@
     const img = document.createElement('img');
     img.alt = '';
     img.referrerPolicy = 'no-referrer';
-    img.src = faviconUrl(fav.url);
+
+    // Walk the source list on each error; only show the letter avatar
+    // after every source has failed.
+    const sources = faviconSources(fav.url);
+    let sourceIndex = 0;
+    img.src = sources[0];
     img.onerror = () => {
-      // Replace the broken img with a letter avatar.
+      sourceIndex += 1;
+      if (sourceIndex < sources.length) {
+        img.src = sources[sourceIndex];
+        return;
+      }
+      // All sources failed — replace with a letter avatar.
       faviconWrap.innerHTML = '';
       const letter = document.createElement('span');
       letter.className = 'tile-favicon-letter';
