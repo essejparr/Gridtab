@@ -12,11 +12,47 @@
 
   // Default settings. Each maps to one or more CSS variables on :root.
   const DEFAULT_SETTINGS = {
-    tileSize: 'md',   // sm | md | lg
+    tileSize: 'md',     // sm | md | lg
     gap:      'normal', // tight | normal | relaxed
-    iconSize: 'md',   // sm | md | lg
-    theme:    'auto', // auto | light | dark
+    iconSize: 'md',     // sm | md | lg
+    theme:    'auto',   // see THEMES below
+    accentColor: 'default', // see BUTTON_COLORS below; 'default' = theme accent
+    unlockedThemes: [], // list of theme ids the user has paid to unlock
   };
+
+  /**
+   * Theme registry. Free themes are always available; pro themes require
+   * the user to be in `unlockedThemes`. Each theme carries swatch colors
+   * used to render the picker thumbnail (no need to actually apply the
+   * theme to read its colors).
+   */
+  const THEMES = [
+    { id: 'auto',   name: 'Auto',   tier: 'free',
+      swatch: ['#f4f5f7', '#ffffff', '#0f1115', '#1c2030'] },
+    { id: 'light',  name: 'Light',  tier: 'free',
+      swatch: ['#f4f5f7', '#ffffff', '#e5e7eb', '#2563eb'] },
+    { id: 'dark',   name: 'Dark',   tier: 'free',
+      swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
+    { id: 'sunset', name: 'Sunset', tier: 'pro',
+      swatch: ['#fbf2e7', '#ffffff', '#f0d9c0', '#e85d3a'] },
+  ];
+
+  /**
+   * Curated palette for the Add-favorite button color override.
+   * 'default' uses the theme's accent. Each entry has bg + hover; text
+   * color is auto-derived from luminance at apply-time.
+   */
+  const BUTTON_COLORS = [
+    { id: 'default', name: 'Theme',  bg: null,       hover: null      },
+    { id: 'blue',    name: 'Blue',   bg: '#2563eb',  hover: '#1d4ed8' },
+    { id: 'black',   name: 'Black',  bg: '#111111',  hover: '#000000' },
+    { id: 'red',     name: 'Red',    bg: '#dc2626',  hover: '#b91c1c' },
+    { id: 'green',   name: 'Green',  bg: '#16a34a',  hover: '#15803d' },
+    { id: 'amber',   name: 'Amber',  bg: '#f59e0b',  hover: '#d97706' },
+    { id: 'purple',  name: 'Purple', bg: '#7c3aed',  hover: '#6d28d9' },
+    { id: 'teal',    name: 'Teal',   bg: '#0d9488',  hover: '#0f766e' },
+    { id: 'white',   name: 'White',  bg: '#ffffff',  hover: '#f3f4f6' },
+  ];
 
   // Maps each setting value to the CSS variable values it should produce.
   // Keeping this here (not in CSS) lets us validate stored values and fall
@@ -55,6 +91,15 @@
   const settingsBtn    = document.getElementById('settingsBtn');
   const settingsModal  = document.getElementById('settingsModal');
   const resetBtn       = document.getElementById('resetSettingsBtn');
+  // Split add button + color picker.
+  const addBtnWrap     = document.querySelector('.add-btn-wrap');
+  const addBtnCaret    = document.getElementById('addBtnCaret');
+  const colorMenu      = document.getElementById('addBtnColorMenu');
+  const colorMenuGrid  = document.getElementById('colorMenuGrid');
+  // Theme picker + unlock modal.
+  const themeGrid      = document.getElementById('themeGrid');
+  const unlockModal    = document.getElementById('unlockModal');
+  const unlockBtn      = document.getElementById('unlockBtn');
   // Custom icon uploader (in the favorite edit modal).
   const iconPreview    = document.getElementById('iconPreview');
   const iconFileInput  = document.getElementById('iconFileInput');
@@ -124,21 +169,223 @@
       }
     }
 
-    // Theme — 'auto' removes the override so prefers-color-scheme takes over.
-    if (s.theme === 'auto') {
+    // Theme — fall back to 'auto' if a Pro theme was selected then locked
+    // again somehow (defensive).
+    const theme = isThemeAvailable(s.theme, s) ? s.theme : 'auto';
+    if (theme === 'auto') {
       root.removeAttribute('data-theme');
     } else {
-      root.setAttribute('data-theme', s.theme);
+      root.setAttribute('data-theme', theme);
+    }
+
+    // Accent color override for the Add-favorite button. 'default' clears
+    // the inline overrides so the theme's accent shows through.
+    const color = BUTTON_COLORS.find((c) => c.id === s.accentColor) || BUTTON_COLORS[0];
+    if (color.bg) {
+      root.style.setProperty('--accent', color.bg);
+      root.style.setProperty('--accent-hover', color.hover);
+      root.style.setProperty('--accent-text', readableTextOn(color.bg));
+    } else {
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--accent-hover');
+      root.style.removeProperty('--accent-text');
     }
 
     // Reflect active state on segmented control buttons.
-    const buttons = settingsModal.querySelectorAll('.seg-btn');
-    buttons.forEach((btn) => {
+    settingsModal.querySelectorAll('.seg-btn').forEach((btn) => {
       const key = btn.dataset.setting;
       const active = btn.dataset.value === s[key];
       btn.setAttribute('aria-checked', active ? 'true' : 'false');
     });
+
+    // Re-render dynamic pickers so their checked state matches.
+    renderThemePicker();
+    renderColorMenu();
   }
+
+  /**
+   * Compute a readable text color (white or black) for a given background
+   * hex using the W3C relative-luminance formula. Avoids the need for the
+   * user to pick text color themselves when overriding the button.
+   */
+  function readableTextOn(hex) {
+    const m = /^#?([a-f0-9]{6}|[a-f0-9]{3})$/i.exec(hex);
+    if (!m) return '#ffffff';
+    let h = m[1];
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+    const r = parseInt(h.slice(0, 2), 16) / 255;
+    const g = parseInt(h.slice(2, 4), 16) / 255;
+    const b = parseInt(h.slice(4, 6), 16) / 255;
+    // sRGB → linear, then luminance. Threshold ~0.55 picks white on most
+    // mid-tones (red, blue, purple) and black on yellow/amber/white.
+    const lin = (c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    return L > 0.55 ? '#111111' : '#ffffff';
+  }
+
+  function isThemeAvailable(themeId, s) {
+    const theme = THEMES.find((t) => t.id === themeId);
+    if (!theme) return false;
+    if (theme.tier === 'free') return true;
+    return Array.isArray(s.unlockedThemes) && s.unlockedThemes.includes(themeId);
+  }
+
+  // -----------------------------------------------------------------------
+  // Theme picker + Color menu rendering
+  // -----------------------------------------------------------------------
+
+  function renderThemePicker() {
+    if (!themeGrid) return;
+    themeGrid.innerHTML = '';
+    for (const theme of THEMES) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'theme-card';
+      card.dataset.themeId = theme.id;
+      card.setAttribute('role', 'radio');
+      card.setAttribute('aria-checked', settings.theme === theme.id ? 'true' : 'false');
+
+      const locked = theme.tier === 'pro' && !isThemeAvailable(theme.id, settings);
+      if (locked) card.classList.add('is-locked');
+
+      const swatch = document.createElement('div');
+      swatch.className = 'theme-card-swatch';
+      for (const color of theme.swatch) {
+        const cell = document.createElement('span');
+        cell.style.background = color;
+        swatch.appendChild(cell);
+      }
+
+      const name = document.createElement('div');
+      name.className = 'theme-card-name';
+      name.textContent = theme.name;
+
+      card.appendChild(swatch);
+      card.appendChild(name);
+
+      if (theme.tier === 'pro') {
+        const badge = document.createElement('span');
+        badge.className = 'theme-card-pro';
+        badge.textContent = locked ? 'Pro' : '✓ Pro';
+        card.appendChild(badge);
+      }
+
+      card.addEventListener('click', () => handleThemeSelect(theme.id));
+      themeGrid.appendChild(card);
+    }
+  }
+
+  function renderColorMenu() {
+    if (!colorMenuGrid) return;
+    colorMenuGrid.innerHTML = '';
+    for (const color of BUTTON_COLORS) {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'color-swatch';
+      swatch.title = color.name;
+      swatch.setAttribute('role', 'menuitemradio');
+      swatch.setAttribute('aria-checked', settings.accentColor === color.id ? 'true' : 'false');
+      // 'default' uses a subtle gradient to indicate "follow theme".
+      if (color.id === 'default') {
+        swatch.style.background =
+          'conic-gradient(from 180deg, #2563eb, #16a34a, #f59e0b, #dc2626, #2563eb)';
+      } else {
+        swatch.style.background = color.bg;
+      }
+      swatch.addEventListener('click', () => handleColorSelect(color.id));
+      colorMenuGrid.appendChild(swatch);
+    }
+  }
+
+  async function handleThemeSelect(themeId) {
+    if (!isThemeAvailable(themeId, settings)) {
+      // Locked Pro theme — open unlock dialog.
+      openUnlockModal(themeId);
+      return;
+    }
+    if (settings.theme === themeId) return;
+    settings = { ...settings, theme: themeId };
+    applySettings(settings);
+    await saveSettings(settings);
+  }
+
+  async function handleColorSelect(colorId) {
+    if (settings.accentColor === colorId) return;
+    settings = { ...settings, accentColor: colorId };
+    applySettings(settings);
+    await saveSettings(settings);
+    closeColorMenu();
+  }
+
+  // -----------------------------------------------------------------------
+  // Unlock modal (placeholder — wire up real billing later)
+  // -----------------------------------------------------------------------
+
+  let pendingUnlockTheme = null;
+
+  function openUnlockModal(themeId) {
+    pendingUnlockTheme = themeId;
+    unlockModal.hidden = false;
+    unlockModal.setAttribute('aria-hidden', 'false');
+  }
+  function closeUnlockModal() {
+    unlockModal.hidden = true;
+    unlockModal.setAttribute('aria-hidden', 'true');
+    pendingUnlockTheme = null;
+  }
+
+  // For now, the unlock button is a placeholder: it grants the unlock
+  // immediately and persists it. When real billing is wired up (e.g. via
+  // a backend license check), this is the only spot that needs to change.
+  unlockBtn.addEventListener('click', async () => {
+    const themeId = pendingUnlockTheme;
+    if (!themeId) {
+      closeUnlockModal();
+      return;
+    }
+    const unlocked = Array.from(new Set([...(settings.unlockedThemes || []), themeId]));
+    settings = { ...settings, unlockedThemes: unlocked, theme: themeId };
+    applySettings(settings);
+    await saveSettings(settings);
+    closeUnlockModal();
+  });
+
+  unlockModal.addEventListener('click', (e) => {
+    if (e.target instanceof HTMLElement && e.target.dataset.closeUnlock === 'true') {
+      closeUnlockModal();
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // Color popover open/close
+  // -----------------------------------------------------------------------
+
+  function openColorMenu() {
+    colorMenu.hidden = false;
+    addBtnCaret.setAttribute('aria-expanded', 'true');
+    // Close on next outside click.
+    setTimeout(() => document.addEventListener('click', outsideColorMenu), 0);
+  }
+  function closeColorMenu() {
+    colorMenu.hidden = true;
+    addBtnCaret.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', outsideColorMenu);
+  }
+  function outsideColorMenu(e) {
+    if (!addBtnWrap.contains(e.target)) closeColorMenu();
+  }
+
+  addBtnCaret.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (colorMenu.hidden) openColorMenu();
+    else closeColorMenu();
+  });
+  // Right-click anywhere on the split button opens the popover too.
+  addBtnWrap.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (colorMenu.hidden) openColorMenu();
+    else closeColorMenu();
+  });
 
   // -----------------------------------------------------------------------
   // URL helpers
@@ -687,9 +934,11 @@
     }
   });
 
-  // Esc closes whichever modal is open.
+  // Esc closes whichever modal/popover is open.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (!colorMenu.hidden) { closeColorMenu(); return; }
+    if (!unlockModal.hidden) { closeUnlockModal(); return; }
     if (!modal.hidden) closeModal();
     else if (!settingsModal.hidden) closeSettingsModal();
   });

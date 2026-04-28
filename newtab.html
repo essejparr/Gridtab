@@ -9,12 +9,6 @@
 <body>
   <main class="page">
     <header class="header">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <h1 class="brand-name">GridTab</h1>
-      </div>
       <div class="header-actions">
         <button id="settingsBtn" class="btn btn-ghost btn-icon-only" type="button"
                 aria-label="Settings">
@@ -25,10 +19,30 @@
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </button>
-        <button id="addBtn" class="btn btn-primary" type="button">
-          <span class="btn-icon" aria-hidden="true">+</span>
-          <span>Add favorite</span>
-        </button>
+        <!-- Add-favorite is split: main button + caret. Click main = open
+             modal. Click caret (or right-click anywhere on the wrapper) =
+             open the color picker popover. -->
+        <div class="add-btn-wrap">
+          <button id="addBtn" class="btn btn-primary add-btn-main" type="button">
+            <span class="btn-icon" aria-hidden="true">+</span>
+            <span>Add favorite</span>
+          </button>
+          <button id="addBtnCaret" class="btn btn-primary add-btn-caret"
+                  type="button" aria-label="Customize button color"
+                  aria-haspopup="true" aria-expanded="false">
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor"
+                    stroke-width="1.5" fill="none" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <!-- Color picker popover -->
+          <div id="addBtnColorMenu" class="color-menu" hidden role="menu">
+            <div class="color-menu-label">Button color</div>
+            <div class="color-menu-grid" id="colorMenuGrid"></div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -150,11 +164,7 @@
 
         <div class="field">
           <span class="field-label">Theme</span>
-          <div class="seg" role="radiogroup" aria-label="Theme">
-            <button type="button" class="seg-btn" data-setting="theme" data-value="auto">Auto</button>
-            <button type="button" class="seg-btn" data-setting="theme" data-value="light">Light</button>
-            <button type="button" class="seg-btn" data-setting="theme" data-value="dark">Dark</button>
-          </div>
+          <div class="theme-grid" id="themeGrid"></div>
         </div>
 
         <div class="modal-actions">
@@ -166,6 +176,28 @@
               Done
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unlock dialog shown when a Pro theme is tapped without unlock. -->
+  <div id="unlockModal" class="modal" hidden aria-hidden="true">
+    <div class="modal-backdrop" data-close-unlock="true"></div>
+    <div class="modal-card unlock-card" role="dialog" aria-modal="true">
+      <h2 class="modal-title">Unlock all themes</h2>
+      <p class="unlock-copy">
+        Get the full theme library for a one-time $0.99. New themes are
+        added regularly.
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close-unlock="true">
+          Maybe later
+        </button>
+        <div class="modal-actions-right">
+          <button id="unlockBtn" type="button" class="btn btn-primary">
+            Unlock for $0.99
+          </button>
         </div>
       </div>
     </div>
