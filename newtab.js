@@ -203,7 +203,56 @@
     tile.className = 'tile';
     tile.href = fav.url;
     tile.dataset.id = fav.id;
+    tile.draggable = true;
     tile.setAttribute('aria-label', `${fav.title} — ${getDomain(fav.url)}`);
+
+    // --- Drag-and-drop wiring ---
+    // The tile being dragged stores its id; dragover/drop on other tiles
+    // reorders the favorites array and re-renders.
+    tile.addEventListener('dragstart', (e) => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', fav.id);
+      // Slight delay so the browser captures the drag image *before* we
+      // dim the source tile. Without this the drag preview also dims.
+      setTimeout(() => {
+        tile.classList.add('is-dragging');
+        document.body.classList.add('is-dragging');
+      }, 0);
+    });
+
+    tile.addEventListener('dragend', () => {
+      tile.classList.remove('is-dragging');
+      document.body.classList.remove('is-dragging');
+      // Clear any lingering drop-target highlights on tiles.
+      document.querySelectorAll('.tile.is-drop-target')
+        .forEach((el) => el.classList.remove('is-drop-target'));
+    });
+
+    tile.addEventListener('dragover', (e) => {
+      e.preventDefault(); // required to allow drop
+      e.dataTransfer.dropEffect = 'move';
+      if (!tile.classList.contains('is-dragging')) {
+        tile.classList.add('is-drop-target');
+      }
+    });
+
+    tile.addEventListener('dragleave', () => {
+      tile.classList.remove('is-drop-target');
+    });
+
+    tile.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.remove('is-drop-target');
+
+      const draggedId = e.dataTransfer.getData('text/plain');
+      const targetId  = fav.id;
+      if (!draggedId || draggedId === targetId) return;
+
+      reorderFavorites(draggedId, targetId);
+      await saveFavorites(favorites);
+      render();
+    });
 
     // Edit button floats over the tile, top-right.
     const editBtn = document.createElement('button');
@@ -211,6 +260,8 @@
     editBtn.className = 'tile-edit';
     editBtn.setAttribute('aria-label', `Edit ${fav.title}`);
     editBtn.textContent = '✎';
+    // The edit button shouldn't kick off a drag of the parent tile.
+    editBtn.draggable = false;
     editBtn.addEventListener('click', (e) => {
       // Prevent navigation when the edit button is clicked.
       e.preventDefault();
@@ -366,6 +417,19 @@
       return window.crypto.randomUUID();
     }
     return 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  /**
+   * Mutate `favorites` in place, moving the dragged item to occupy the
+   * target's slot. The target shifts to make room — items between the two
+   * positions slide one step in the appropriate direction.
+   */
+  function reorderFavorites(draggedId, targetId) {
+    const fromIndex = favorites.findIndex((f) => f.id === draggedId);
+    const toIndex   = favorites.findIndex((f) => f.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+    const [moved] = favorites.splice(fromIndex, 1);
+    favorites.splice(toIndex, 0, moved);
   }
 
   // -----------------------------------------------------------------------

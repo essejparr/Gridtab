@@ -271,6 +271,28 @@ button { font-family: inherit; cursor: pointer; }
   outline-offset: 2px;
 }
 
+/* Drag-and-drop states */
+.tile[draggable="true"] { cursor: grab; }
+.tile[draggable="true"]:active { cursor: grabbing; }
+
+/* The tile being dragged. Reduced opacity gives a "lifted" feel. */
+.tile.is-dragging {
+  opacity: 0.4;
+  transform: scale(0.96);
+}
+
+/* The tile currently under the cursor — gets a soft highlight ring so the
+   drop target is obvious without disrupting the grid layout. */
+.tile.is-drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* While any drag is in progress, suppress the hover tooltip globally —
+   it's noise during reordering. */
+body.is-dragging .tile-tooltip { opacity: 0 !important; }
+
 /* Hero region: large centered favicon. With the footer removed, the icon
    is centered in the entire tile. */
 .tile-hero {
