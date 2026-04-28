@@ -331,11 +331,6 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   width: 70%;
   height: 70%;
   object-fit: contain;
-  /* Improve scaling quality when source icons are smaller than the
-     display size. Different browsers honor different keywords; both
-     declarations are valid and the browser picks the one it understands. */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
 }
 
 /* Letter fallback shown when a favicon image fails to load. */

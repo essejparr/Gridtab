@@ -166,25 +166,46 @@
   }
 
   /**
+   * Hand-curated map of high-resolution icon URLs for sites where
+   * Google's favicon service returns small/blurry results. We use
+   * only stable, conventional paths (apple-touch-icon.png at the
+   * root) — never hash-versioned build assets that can break.
+   *
+   * If any of these URLs ever 404, the chain falls through to Google
+   * automatically — broken overrides degrade to "same as before" not
+   * to "broken".
+   *
+   * Add new entries here as you find sites that look blurry.
+   */
+  const ICON_OVERRIDES = {
+    'x.com':             'https://abs.twimg.com/favicons/twitter.3.ico',
+    'twitter.com':       'https://abs.twimg.com/favicons/twitter.3.ico',
+    'github.com':        'https://github.com/apple-touch-icon.png',
+    'reddit.com':        'https://www.reddit.com/apple-touch-icon-precomposed.png',
+    'stackoverflow.com': 'https://stackoverflow.com/apple-touch-icon.png',
+    'wikipedia.org':     'https://en.wikipedia.org/static/apple-touch/wikipedia.png',
+    'medium.com':        'https://medium.com/favicon.ico',
+  };
+
+  /**
    * Returns an ordered list of favicon URLs to try for a given site.
    * The <img> in buildTile walks the list on each onerror until one
    * loads, then falls back to a letter avatar if all fail.
    *
-   * Different services return different quality:
-   *   - DuckDuckGo often returns Apple touch icons (higher res) for sites
-   *     that have them, but smaller icons for sites that don't.
-   *   - Google's s2/favicons is the most consistent but caps at whatever
-   *     the site advertises — small for sites like X/Twitter or GitHub
-   *     that only ship low-res favicons.
-   * We try DuckDuckGo first because it tends to win on big-brand sites
-   * (the ones users add most often), then Google as a reliable fallback.
+   * Strategy: if the domain is in our overrides map, try the high-res
+   * source first. Otherwise (or as fallback) use Google's favicon
+   * service which is reliable but capped at the resolution sites
+   * advertise — fine for most, blurry for the ones in the override map.
    */
   function faviconSources(urlStr) {
-    const domain = encodeURIComponent(getDomain(urlStr));
-    return [
-      `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-      `https://www.google.com/s2/favicons?sz=256&domain=${domain}`,
-    ];
+    const domain = getDomain(urlStr);
+    const encoded = encodeURIComponent(domain);
+    const sources = [];
+    if (ICON_OVERRIDES[domain]) {
+      sources.push(ICON_OVERRIDES[domain]);
+    }
+    sources.push(`https://www.google.com/s2/favicons?sz=128&domain=${encoded}`);
+    return sources;
   }
 
   // -----------------------------------------------------------------------
