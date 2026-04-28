@@ -249,6 +249,10 @@ button { font-family: inherit; cursor: pointer; }
 .tile {
   position: relative;
   aspect-ratio: 1 / 1;
+  /* Container query context — lets descendants size themselves relative
+     to the tile width via cqw units. Critical for keeping icons capped
+     at a fraction of the tile so the tile stays square. */
+  container-type: inline-size;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -300,13 +304,20 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  /* Padding scales with the tile, with a sane minimum, so small tiles
+     don't waste space on a fixed 16px frame. */
+  padding: clamp(8px, 8cqw, 16px);
   min-height: 0;
 }
 
 .tile-favicon {
-  width: var(--icon-size);
-  height: var(--icon-size);
+  /* The favicon target size is set via --icon-size, but it's capped at
+     70% of the tile width (using container query units) so it can never
+     force the tile to grow taller than wide. min-width:0 lets the flex
+     child shrink past its content size when the tile is small. */
+  width:  min(var(--icon-size),  70cqw);
+  height: min(var(--icon-size),  70cqw);
+  min-width: 0;
   border-radius: 18px;
   background: var(--bg);
   display: flex;
@@ -318,8 +329,10 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
 .tile:hover .tile-favicon { transform: scale(1.06); }
 
 .tile-favicon img {
-  width: var(--icon-img-size);
-  height: var(--icon-img-size);
+  /* Same cap on the inner image — it's the favicon's pixel size, but it
+     should never exceed the container that holds it. */
+  width:  min(var(--icon-img-size), 50cqw);
+  height: min(var(--icon-img-size), 50cqw);
   object-fit: contain;
 }
 
