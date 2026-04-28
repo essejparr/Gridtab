@@ -1,0 +1,323 @@
+/* ==========================================================================
+   GridTab — New Tab logic
+   Manages favorites (load, add, edit, delete) using chrome.storage.local
+   and renders the grid of tiles.
+   ========================================================================== */
+
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'favorites';
+
+  // DOM references
+  const grid        = document.getElementById('grid');
+  const emptyState  = document.getElementById('emptyState');
+  const addBtn      = document.getElementById('addBtn');
+  const emptyAddBtn = document.getElementById('emptyAddBtn');
+  const modal       = document.getElementById('modal');
+  const modalTitle  = document.getElementById('modalTitle');
+  const form        = document.getElementById('favoriteForm');
+  const titleInput  = document.getElementById('titleInput');
+  const urlInput    = document.getElementById('urlInput');
+  const urlError    = document.getElementById('urlError');
+  const saveLabel   = document.getElementById('saveLabel');
+  const deleteBtn   = document.getElementById('deleteBtn');
+
+  // In-memory state. `editingId` is null when adding, or a string id when editing.
+  let favorites = [];
+  let editingId = null;
+
+  // -----------------------------------------------------------------------
+  // Storage helpers (chrome.storage.local)
+  // -----------------------------------------------------------------------
+
+  function loadFavorites() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([STORAGE_KEY], (result) => {
+        const stored = result[STORAGE_KEY];
+        resolve(Array.isArray(stored) ? stored : []);
+      });
+    });
+  }
+
+  function saveFavorites(list) {
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ [STORAGE_KEY]: list }, () => resolve());
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // URL helpers
+  // -----------------------------------------------------------------------
+
+  /**
+   * Normalize a user-entered URL: prepend https:// if no protocol is given,
+   * then validate. Returns the normalized URL string, or null if invalid.
+   */
+  function normalizeUrl(raw) {
+    const trimmed = (raw || '').trim();
+    if (!trimmed) return null;
+
+    let candidate = trimmed;
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(candidate)) {
+      candidate = 'https://' + candidate;
+    }
+
+    try {
+      const url = new URL(candidate);
+      // Only allow http(s); reject things like javascript:, file:, etc.
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+      if (!url.hostname || !url.hostname.includes('.')) return null;
+      return url.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  function getDomain(urlStr) {
+    try {
+      return new URL(urlStr).hostname.replace(/^www\./, '');
+    } catch {
+      return urlStr;
+    }
+  }
+
+  /**
+   * Use Google's public favicon service to fetch a small favicon for a domain.
+   * This avoids needing the "favicon" host permission. If the request fails,
+   * the <img>'s onerror handler falls back to a letter avatar.
+   */
+  function faviconUrl(urlStr) {
+    const domain = getDomain(urlStr);
+    return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
+  }
+
+  // -----------------------------------------------------------------------
+  // Rendering
+  // -----------------------------------------------------------------------
+
+  function render() {
+    grid.innerHTML = '';
+
+    if (favorites.length === 0) {
+      grid.hidden = true;
+      emptyState.hidden = false;
+      return;
+    }
+
+    grid.hidden = false;
+    emptyState.hidden = true;
+
+    for (const fav of favorites) {
+      grid.appendChild(buildTile(fav));
+    }
+  }
+
+  function buildTile(fav) {
+    // The tile itself is an <a> so click + middle-click + keyboard "Enter"
+    // all work naturally. Per spec, clicking opens in the current tab.
+    const tile = document.createElement('a');
+    tile.className = 'tile';
+    tile.href = fav.url;
+    tile.dataset.id = fav.id;
+    tile.setAttribute('aria-label', `${fav.title} — ${getDomain(fav.url)}`);
+
+    // Top row: favicon + edit button
+    const top = document.createElement('div');
+    top.className = 'tile-top';
+
+    const faviconWrap = document.createElement('div');
+    faviconWrap.className = 'tile-favicon';
+
+    const img = document.createElement('img');
+    img.alt = '';
+    img.referrerPolicy = 'no-referrer';
+    img.src = faviconUrl(fav.url);
+    img.onerror = () => {
+      // Replace the broken img with a letter avatar.
+      faviconWrap.innerHTML = '';
+      const letter = document.createElement('span');
+      letter.className = 'tile-favicon-letter';
+      letter.textContent = (fav.title || '?').charAt(0);
+      faviconWrap.appendChild(letter);
+    };
+    faviconWrap.appendChild(img);
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'tile-edit';
+    editBtn.setAttribute('aria-label', `Edit ${fav.title}`);
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', (e) => {
+      // Prevent navigation when the edit button is clicked.
+      e.preventDefault();
+      e.stopPropagation();
+      openEditModal(fav.id);
+    });
+
+    top.appendChild(faviconWrap);
+    top.appendChild(editBtn);
+
+    // Body: title + domain
+    const body = document.createElement('div');
+    body.className = 'tile-body';
+
+    const title = document.createElement('div');
+    title.className = 'tile-title';
+    title.textContent = fav.title;
+
+    const domain = document.createElement('div');
+    domain.className = 'tile-domain';
+    domain.textContent = getDomain(fav.url);
+
+    body.appendChild(title);
+    body.appendChild(domain);
+
+    tile.appendChild(top);
+    tile.appendChild(body);
+
+    return tile;
+  }
+
+  // -----------------------------------------------------------------------
+  // Modal: open / close / submit
+  // -----------------------------------------------------------------------
+
+  function openAddModal() {
+    editingId = null;
+    modalTitle.textContent = 'Add favorite';
+    saveLabel.textContent = 'Save';
+    deleteBtn.hidden = true;
+    titleInput.value = '';
+    urlInput.value = '';
+    showModal();
+  }
+
+  function openEditModal(id) {
+    const fav = favorites.find((f) => f.id === id);
+    if (!fav) return;
+    editingId = id;
+    modalTitle.textContent = 'Edit favorite';
+    saveLabel.textContent = 'Save changes';
+    deleteBtn.hidden = false;
+    titleInput.value = fav.title;
+    urlInput.value = fav.url;
+    showModal();
+  }
+
+  function showModal() {
+    clearError();
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    // Focus the first field for fast keyboard entry.
+    setTimeout(() => titleInput.focus(), 30);
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    editingId = null;
+  }
+
+  function showError(msg) {
+    urlError.textContent = msg;
+    urlError.hidden = false;
+  }
+  function clearError() {
+    urlError.textContent = '';
+    urlError.hidden = true;
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    clearError();
+
+    const title = titleInput.value.trim();
+    const normalized = normalizeUrl(urlInput.value);
+
+    if (!title) {
+      titleInput.focus();
+      return;
+    }
+    if (!normalized) {
+      showError('Please enter a valid URL (e.g. example.com).');
+      urlInput.focus();
+      return;
+    }
+
+    if (editingId) {
+      favorites = favorites.map((f) =>
+        f.id === editingId ? { ...f, title, url: normalized } : f
+      );
+    } else {
+      favorites.push({
+        id: generateId(),
+        title,
+        url: normalized,
+        createdAt: Date.now(),
+      });
+    }
+
+    await saveFavorites(favorites);
+    render();
+    closeModal();
+  }
+
+  async function handleDelete() {
+    if (!editingId) return;
+    // Simple confirm — keeps the UI lightweight and dependency-free.
+    const fav = favorites.find((f) => f.id === editingId);
+    const ok = confirm(`Delete "${fav ? fav.title : 'this favorite'}"?`);
+    if (!ok) return;
+    favorites = favorites.filter((f) => f.id !== editingId);
+    await saveFavorites(favorites);
+    render();
+    closeModal();
+  }
+
+  function generateId() {
+    // Prefer crypto.randomUUID where available; fall back to a simple id.
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+    return 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  // -----------------------------------------------------------------------
+  // Event wiring
+  // -----------------------------------------------------------------------
+
+  addBtn.addEventListener('click', openAddModal);
+  emptyAddBtn.addEventListener('click', openAddModal);
+  form.addEventListener('submit', handleSubmit);
+  deleteBtn.addEventListener('click', handleDelete);
+
+  // Backdrop / cancel buttons (any element with data-close="true").
+  modal.addEventListener('click', (e) => {
+    if (e.target instanceof HTMLElement && e.target.dataset.close === 'true') {
+      closeModal();
+    }
+  });
+
+  // Esc closes the modal.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeModal();
+  });
+
+  // Live-sync if storage changes in another tab.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[STORAGE_KEY]) {
+      favorites = changes[STORAGE_KEY].newValue || [];
+      render();
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // Initial load
+  // -----------------------------------------------------------------------
+
+  (async function init() {
+    favorites = await loadFavorites();
+    render();
+  })();
+})();

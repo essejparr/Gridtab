@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Tab — GridTab</title>
+  <link rel="stylesheet" href="newtab.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <h1 class="brand-name">GridTab</h1>
+      </div>
+      <button id="addBtn" class="btn btn-primary" type="button">
+        <span class="btn-icon" aria-hidden="true">+</span>
+        <span>Add favorite</span>
+      </button>
+    </header>
+
+    <!-- Grid of favorite tiles. Populated by newtab.js. -->
+    <section id="grid" class="grid" aria-label="Favorite sites"></section>
+
+    <!-- Empty state shown when there are no favorites. -->
+    <section id="emptyState" class="empty" hidden>
+      <div class="empty-card">
+        <div class="empty-illustration" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <h2>No favorites yet</h2>
+        <p>Add your most-visited sites to build your personal grid.</p>
+        <button id="emptyAddBtn" class="btn btn-primary" type="button">
+          Add your first favorite
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal for adding / editing a favorite. -->
+  <div id="modal" class="modal" hidden aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle" class="modal-title">Add favorite</h2>
+      <form id="favoriteForm" class="form" novalidate>
+        <label class="field">
+          <span class="field-label">Title</span>
+          <input id="titleInput" type="text" class="input"
+                 placeholder="e.g. GitHub" maxlength="60" required />
+        </label>
+        <label class="field">
+          <span class="field-label">URL</span>
+          <input id="urlInput" type="text" class="input"
+                 placeholder="github.com" required />
+          <span id="urlError" class="field-error" hidden></span>
+        </label>
+        <div class="modal-actions">
+          <button id="deleteBtn" type="button" class="btn btn-danger" hidden>
+            Delete
+          </button>
+          <div class="modal-actions-right">
+            <button type="button" class="btn btn-ghost" data-close="true">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <span id="saveLabel">Save</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="newtab.js"></script>
+</body>
+</html>
