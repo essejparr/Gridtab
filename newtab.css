@@ -29,8 +29,8 @@
   --tile-min: 140px;
   --tile-max: 180px;
   --grid-gap: 16px;
-  --icon-size: 56px;       /* favicon container size */
-  --icon-img-size: 36px;   /* favicon image size inside the container */
+  --icon-size: 88px;       /* favicon container size */
+  --icon-img-size: 56px;   /* favicon image size inside the container */
 }
 
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
@@ -243,8 +243,9 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* Each tile is a perfect square (aspect-ratio 1) so the layout reads as
-   connected blocks. The favicon is the hero — large and centered — with a
-   small footer strip showing the title and domain. */
+   connected blocks. The favicon is centered and fills the tile.
+   Note: overflow is intentionally visible so the hover tooltip can escape
+   above the tile bounds. */
 .tile {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -258,7 +259,6 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: var(--shadow-sm);
   transition: transform .18s ease, box-shadow .18s ease,
               border-color .18s ease, background-color .18s ease;
-  overflow: hidden;
 }
 .tile:hover {
   transform: translateY(-2px);
@@ -271,7 +271,8 @@ button { font-family: inherit; cursor: pointer; }
   outline-offset: 2px;
 }
 
-/* Hero region: large centered favicon. Takes ~65% of the tile height. */
+/* Hero region: large centered favicon. With the footer removed, the icon
+   is centered in the entire tile. */
 .tile-hero {
   flex: 1 1 auto;
   display: flex;
@@ -284,7 +285,7 @@ button { font-family: inherit; cursor: pointer; }
 .tile-favicon {
   width: var(--icon-size);
   height: var(--icon-size);
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--bg);
   display: flex;
   align-items: center;
@@ -303,36 +304,63 @@ button { font-family: inherit; cursor: pointer; }
 /* Letter fallback shown when a favicon image fails to load. */
 .tile-favicon-letter {
   font-weight: 700;
-  font-size: 26px;
+  font-size: calc(var(--icon-img-size) * 0.6);
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
-/* Footer strip: title + domain. Compact, sits at the bottom of the tile. */
-.tile-footer {
-  flex: 0 0 auto;
-  padding: 10px 14px 12px;
-  border-top: 1px solid var(--border);
-  background: var(--bg-elev);
-  min-width: 0;
+/* Hover tooltip — replaces the old footer. Sits above the tile, fades in
+   on hover/focus. The arrow at the bottom points down at the tile. */
+.tile-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  background: var(--text);
+  color: var(--bg-elev);
+  padding: 8px 12px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+  max-width: 240px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 5;
 }
-.tile-title {
+.tile-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text);
+}
+.tile-tooltip-title {
   font-weight: 600;
   font-size: 13px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1.3;
-}
-.tile-domain {
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.tile-tooltip-domain {
+  font-size: 11px;
+  opacity: 0.65;
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Show on hover and on keyboard focus, with a tiny delay so quick
+   mouse-overs while scanning the grid don't flash tooltips everywhere. */
+.tile:hover .tile-tooltip,
+.tile:focus-visible .tile-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: .12s;
 }
 
 /* Edit button: floats top-right, appears on hover. */

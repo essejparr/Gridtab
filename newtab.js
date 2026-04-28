@@ -33,9 +33,9 @@
       relaxed: { '--grid-gap': '28px' },
     },
     iconSize: {
-      sm: { '--icon-size': '44px', '--icon-img-size': '26px' },
-      md: { '--icon-size': '56px', '--icon-img-size': '36px' },
-      lg: { '--icon-size': '72px', '--icon-img-size': '48px' },
+      sm: { '--icon-size': '64px',  '--icon-img-size': '40px' },
+      md: { '--icon-size': '88px',  '--icon-img-size': '56px' },
+      lg: { '--icon-size': '112px', '--icon-img-size': '72px' },
     },
   };
 
@@ -218,7 +218,7 @@
       openEditModal(fav.id);
     });
 
-    // Hero region: large centered favicon with letter-avatar fallback.
+    // Hero region: large centered favicon, fills the tile (no footer).
     const hero = document.createElement('div');
     hero.className = 'tile-hero';
 
@@ -240,24 +240,26 @@
     faviconWrap.appendChild(img);
     hero.appendChild(faviconWrap);
 
-    // Footer: title + domain.
-    const footer = document.createElement('div');
-    footer.className = 'tile-footer';
+    // Hover tooltip — shows title and domain. aria-hidden because the
+    // tile already has an aria-label covering the same info for AT users.
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tile-tooltip';
+    tooltip.setAttribute('aria-hidden', 'true');
 
-    const title = document.createElement('div');
-    title.className = 'tile-title';
-    title.textContent = fav.title;
+    const tipTitle = document.createElement('div');
+    tipTitle.className = 'tile-tooltip-title';
+    tipTitle.textContent = fav.title;
 
-    const domain = document.createElement('div');
-    domain.className = 'tile-domain';
-    domain.textContent = getDomain(fav.url);
+    const tipDomain = document.createElement('div');
+    tipDomain.className = 'tile-tooltip-domain';
+    tipDomain.textContent = getDomain(fav.url);
 
-    footer.appendChild(title);
-    footer.appendChild(domain);
+    tooltip.appendChild(tipTitle);
+    tooltip.appendChild(tipDomain);
 
+    tile.appendChild(tooltip);
     tile.appendChild(editBtn);
     tile.appendChild(hero);
-    tile.appendChild(footer);
 
     return tile;
   }
