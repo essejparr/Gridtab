@@ -177,14 +177,25 @@
    *
    * Add new entries here as you find sites that look blurry.
    */
+  /**
+   * Each value can be a single URL string or an array of URLs to try
+   * in order — useful when a site's high-res icon path is uncertain.
+   * The chain is: overrides (in array order) → Google → letter avatar.
+   */
   const ICON_OVERRIDES = {
-    'x.com':             'https://abs.twimg.com/favicons/twitter.3.ico',
-    'twitter.com':       'https://abs.twimg.com/favicons/twitter.3.ico',
+    // X / Twitter — try the conventional apple-touch-icon first; if X
+    // doesn't host one there, fall through to their .ico bundle which
+    // is small but at least the right brand mark.
+    'x.com':             ['https://x.com/apple-touch-icon.png',
+                          'https://abs.twimg.com/favicons/twitter.3.ico'],
+    'twitter.com':       ['https://twitter.com/apple-touch-icon.png',
+                          'https://abs.twimg.com/favicons/twitter.3.ico'],
     'github.com':        'https://github.com/apple-touch-icon.png',
     'reddit.com':        'https://www.reddit.com/apple-touch-icon-precomposed.png',
     'stackoverflow.com': 'https://stackoverflow.com/apple-touch-icon.png',
     'wikipedia.org':     'https://en.wikipedia.org/static/apple-touch/wikipedia.png',
     'medium.com':        'https://medium.com/favicon.ico',
+    'yahoo.com':         'https://www.yahoo.com/apple-touch-icon.png',
   };
 
   /**
@@ -201,8 +212,11 @@
     const domain = getDomain(urlStr);
     const encoded = encodeURIComponent(domain);
     const sources = [];
-    if (ICON_OVERRIDES[domain]) {
-      sources.push(ICON_OVERRIDES[domain]);
+    const override = ICON_OVERRIDES[domain];
+    if (override) {
+      // Override may be a single URL or an array of URLs to try in order.
+      if (Array.isArray(override)) sources.push(...override);
+      else sources.push(override);
     }
     sources.push(`https://www.google.com/s2/favicons?sz=128&domain=${encoded}`);
     return sources;
