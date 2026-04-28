@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -92,6 +92,27 @@
   --shadow-sm: 0 1px 2px rgba(58, 36, 24, 0.06);
   --shadow-md: 0 4px 12px rgba(58, 36, 24, 0.08);
   --shadow-lg: 0 12px 32px rgba(58, 36, 24, 0.14);
+}
+
+/* Forest (Pro) — deep mossy greens with a warm gold accent. Reads as
+   "focus mode": quiet, organic, less digital than the cool dark theme.
+   The accent is a saturated honey-gold that pops against the greens. */
+:root[data-theme="forest"] {
+  --bg: #1a2820;
+  --bg-elev: #1f3328;
+  --surface: #243831;
+  --surface-hover: #2c4239;
+  --border: #3a544a;
+  --border-strong: #4d6b5e;
+  --text: #e8efe9;
+  --text-muted: #98ad9f;
+  --text-subtle: #6b8276;
+  --accent: #d4a857;
+  --accent-hover: #e0b86b;
+  --accent-text: #1a2820;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.40);
 }
 
 * { box-sizing: border-box; }

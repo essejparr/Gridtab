@@ -17,7 +17,7 @@
     iconSize: 'md',     // sm | md | lg
     theme:    'auto',   // see THEMES below
     accentColor: 'default', // see BUTTON_COLORS below; 'default' = theme accent
-    unlockedThemes: [], // list of theme ids the user has paid to unlock
+    isPro: false,       // Pro unlock — grants ALL pro themes at once
     searchEngine: 'google', // see SEARCH_ENGINES below
   };
 
@@ -36,6 +36,8 @@
       swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
     { id: 'sunset', name: 'Sunset', tier: 'pro',
       swatch: ['#fbf2e7', '#ffffff', '#f0d9c0', '#e85d3a'] },
+    { id: 'forest', name: 'Forest', tier: 'pro',
+      swatch: ['#1a2820', '#243831', '#3a544a', '#d4a857'] },
   ];
 
   /**
@@ -282,7 +284,7 @@
     const theme = THEMES.find((t) => t.id === themeId);
     if (!theme) return false;
     if (theme.tier === 'free') return true;
-    return Array.isArray(s.unlockedThemes) && s.unlockedThemes.includes(themeId);
+    return !!s.isPro;
   }
 
   // -----------------------------------------------------------------------
@@ -389,17 +391,14 @@
     pendingUnlockTheme = null;
   }
 
-  // For now, the unlock button is a placeholder: it grants the unlock
+  // For now, the unlock button is a placeholder: it grants Pro
   // immediately and persists it. When real billing is wired up (e.g. via
   // a backend license check), this is the only spot that needs to change.
   unlockBtn.addEventListener('click', async () => {
     const themeId = pendingUnlockTheme;
-    if (!themeId) {
-      closeUnlockModal();
-      return;
-    }
-    const unlocked = Array.from(new Set([...(settings.unlockedThemes || []), themeId]));
-    settings = { ...settings, unlockedThemes: unlocked, theme: themeId };
+    settings = { ...settings, isPro: true };
+    // If they tapped a specific theme to trigger the unlock, switch to it.
+    if (themeId) settings.theme = themeId;
     applySettings(settings);
     await saveSettings(settings);
     closeUnlockModal();
