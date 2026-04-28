@@ -17,7 +17,11 @@
     iconSize: 'md',     // sm | md | lg
     theme:    'auto',   // see THEMES below
     accentColor: 'default', // see BUTTON_COLORS below; 'default' = theme accent
-    isPro: false,       // Pro unlock — grants ALL pro themes at once
+    // All themes are currently free. The Pro/unlock infrastructure is
+    // kept intact (tier flags below, isThemeAvailable check) so we can
+    // reintroduce a paywall later by flipping this to false and wiring
+    // up real billing. For v1 launch: everyone gets everything.
+    isPro: true,
     searchEngine: 'google', // see SEARCH_ENGINES below
   };
 
@@ -61,47 +65,59 @@
    * Search engine registry. Each engine has a URL template with {q} as
    * the placeholder for the URL-encoded query, plus an inline SVG icon
    * (so we don't depend on external favicon services for the chrome).
+   *
+   * Icons are simplified single-color or two-color marks based on each
+   * brand's identity guidelines. They render at ~20px in the UI; subtle
+   * detail at that size is wasted, so simpler is better.
    */
   const SEARCH_ENGINES = [
     {
       id: 'google', name: 'Google',
       url: 'https://www.google.com/search?q={q}',
-      icon: `<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C39.7 35.5 44 30.3 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>`,
+      // Google's classic 4-color "G" mark.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`,
     },
     {
       id: 'bing', name: 'Bing',
       url: 'https://www.bing.com/search?q={q}',
-      icon: `<svg viewBox="0 0 48 48"><defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37C2B1"/><stop offset="1" stop-color="#0078D4"/></linearGradient></defs><path fill="url(#bg1)" d="M11 4v32l9-3 9 4-12 7v-2L11 44V4z"/><path fill="url(#bg1)" d="M11 4l9 3v18l9 3 8-3-17 17V25L11 22z" opacity=".95"/></svg>`,
+      // Microsoft Bing's stylized B mark.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37C2B1"/><stop offset=".5" stop-color="#0EA5C7"/><stop offset="1" stop-color="#0078D4"/></linearGradient></defs><path fill="url(#bg)" d="M5 2v15.5l4.5-1.7 4.7 2.4L9 21V19l-4-1.5V2zm0 0 4.5 1.7v9l4.7 1.7 4-1.7L5 22V11.5l-4.5-1.7z" transform="translate(2 0)"/></svg>`,
     },
     {
       id: 'duckduckgo', name: 'DuckDuckGo',
       url: 'https://duckduckgo.com/?q={q}',
-      icon: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#DE5833"/><path fill="#fff" d="M28 14c-2 1-3 2-3 5 0 4 4 5 4 9 0 5-4 6-4 12h-6l1-7c-3-1-6-3-7-7 0-2 1-3 2-3l-2-2c0-2 3-3 6-3 5 0 7 1 9-4z"/><circle cx="29" cy="20" r="2" fill="#FFF"/><circle cx="29" cy="20" r="1" fill="#000"/></svg>`,
+      // DDG's orange duck mark — simplified.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#DE5833"/><path fill="#fff" d="M14.5 6.8c-1 .5-1.5 1.2-1.5 2.5 0 2 2 2.5 2 4.5 0 2.5-2 3-2 6h-3l.5-3.5c-1.5-.5-3-1.5-3.5-3.5 0-1 .5-1.5 1-1.5l-1-1c0-1 1.5-1.5 3-1.5 2.5 0 3.5.5 4.5-2z"/><circle cx="14.5" cy="9.8" r="1.1" fill="#fff"/><circle cx="14.5" cy="9.8" r=".5" fill="#000"/></svg>`,
     },
     {
       id: 'brave', name: 'Brave Search',
       url: 'https://search.brave.com/search?q={q}',
-      icon: `<svg viewBox="0 0 48 48"><path fill="#FB542B" d="M24 4 12 9l-3 5 2 8 4 16 9 6 9-6 4-16 2-8-3-5z"/><path fill="#fff" d="m24 14-6 4 3 5-3 5 6 6 6-6-3-5 3-5z" opacity=".85"/></svg>`,
+      // Brave's lion-shield silhouette — simplified to the orange shield form.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#FB542B" d="M21 6.5 19.5 4l-3 .5L12 2 7.5 4.5 4.5 4 3 6.5l1.5 3-.5 4.5 1.5 5L12 22l6.5-3 1.5-5-.5-4.5z"/><path fill="#fff" d="M12 7.5 9 9.5l1.5 3-2 2 3.5 3.5 3.5-3.5-2-2 1.5-3z" opacity=".9"/></svg>`,
     },
     {
       id: 'ecosia', name: 'Ecosia',
       url: 'https://www.ecosia.org/search?q={q}',
-      icon: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#36A86E"/><path fill="#fff" d="M14 30c4 4 12 4 18 0-2-1-4-1-7-1l-3-3c0-3 1-5 3-7 3 0 5 0 7-1-6-4-14-4-18 0-3 4-3 8 0 12z"/></svg>`,
+      // Ecosia's leaf-circle mark.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#36A86E"/><path fill="#fff" d="M6.5 14.5c2 2 6 2 9 0-1-.5-2-.5-3.5-.5l-1.5-1.5c0-1.5.5-2.5 1.5-3.5 1.5 0 2.5 0 3.5-.5-3-2-7-2-9 0-1.5 2-1.5 4 0 6z"/></svg>`,
     },
     {
       id: 'kagi', name: 'Kagi',
       url: 'https://kagi.com/search?q={q}',
-      icon: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#FFB319"/><path fill="#000" d="M16 14h4v8l8-8h5l-9 9 10 11h-5l-9-10v10h-4z"/></svg>`,
+      // Kagi's yellow circle with stylized K.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#FFB319"/><path fill="#1a1a1a" d="M8 7h2v4l4-4h2.5l-4.5 4.5L17 17h-2.5L11 13v4H8z"/></svg>`,
     },
     {
       id: 'perplexity', name: 'Perplexity',
       url: 'https://www.perplexity.ai/?q={q}',
-      icon: `<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#1F1F1F"/><path fill="#20B8A6" d="M24 8 8 18v12l16 10 16-10V18zm0 4 11 7-11 7-11-7zm-12 9 11 7v11l-11-7zm24 0v11l-11 7V28z"/></svg>`,
+      // Perplexity's stylized "?" / network mark.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#1F1F1F"/><path fill="#20B8A6" d="M12 4 4 9v6l8 5 8-5V9zm0 2 5 3-5 3-5-3zm-6 5 5 3v5l-5-3zm12 0v5l-5 3v-5z"/></svg>`,
     },
     {
       id: 'youtube', name: 'YouTube',
       url: 'https://www.youtube.com/results?search_query={q}',
-      icon: `<svg viewBox="0 0 48 48"><rect x="4" y="10" width="40" height="28" rx="6" fill="#FF0000"/><path fill="#fff" d="m20 18 12 6-12 6z"/></svg>`,
+      // YouTube's red "play button" rounded rectangle.
+      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#FF0000" d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.5.6c-1 .3-1.7 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.6 9.5.6 9.5.6s7.6 0 9.5-.6c1-.3 1.7-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8z"/><path fill="#fff" d="M9.6 15.6V8.4l6.3 3.6z"/></svg>`,
     },
   ];
 
@@ -147,10 +163,8 @@
   const addBtnCaret    = document.getElementById('addBtnCaret');
   const colorMenu      = document.getElementById('addBtnColorMenu');
   const colorMenuGrid  = document.getElementById('colorMenuGrid');
-  // Theme picker + unlock modal.
+  // Theme picker.
   const themeGrid      = document.getElementById('themeGrid');
-  const unlockModal    = document.getElementById('unlockModal');
-  const unlockBtn      = document.getElementById('unlockBtn');
   // Search bar + engine popover.
   const searchForm     = document.getElementById('searchForm');
   const searchInput    = document.getElementById('searchInput');
@@ -187,9 +201,20 @@
     });
   }
 
+  /**
+   * Save favorites to storage. Resolves with `{ ok: true }` on success,
+   * or `{ ok: false, error }` if the write fails (most commonly because
+   * the user has exceeded the 10MB chrome.storage.local quota by adding
+   * too many large custom icons). Callers should check and surface a
+   * useful error to the user when ok is false.
+   */
   function saveFavorites(list) {
     return new Promise((resolve) => {
-      chrome.storage.local.set({ [STORAGE_KEY]: list }, () => resolve());
+      chrome.storage.local.set({ [STORAGE_KEY]: list }, () => {
+        const err = chrome.runtime.lastError;
+        if (err) resolve({ ok: false, error: err.message || 'Save failed.' });
+        else resolve({ ok: true });
+      });
     });
   }
 
@@ -320,12 +345,9 @@
       card.appendChild(swatch);
       card.appendChild(name);
 
-      if (theme.tier === 'pro') {
-        const badge = document.createElement('span');
-        badge.className = 'theme-card-pro';
-        badge.textContent = locked ? 'Pro' : '✓ Pro';
-        card.appendChild(badge);
-      }
+      // Pro badge intentionally not rendered while all themes are free.
+      // When a paywall is reintroduced, restore by checking `locked` and
+      // appending a `.theme-card-pro` span here.
 
       card.addEventListener('click', () => handleThemeSelect(theme.id));
       themeGrid.appendChild(card);
@@ -355,11 +377,8 @@
   }
 
   async function handleThemeSelect(themeId) {
-    if (!isThemeAvailable(themeId, settings)) {
-      // Locked Pro theme — open unlock dialog.
-      openUnlockModal(themeId);
-      return;
-    }
+    // No paywall right now — every theme is available to every user.
+    if (!isThemeAvailable(themeId, settings)) return;
     if (settings.theme === themeId) return;
     settings = { ...settings, theme: themeId };
     applySettings(settings);
@@ -373,42 +392,6 @@
     await saveSettings(settings);
     closeColorMenu();
   }
-
-  // -----------------------------------------------------------------------
-  // Unlock modal (placeholder — wire up real billing later)
-  // -----------------------------------------------------------------------
-
-  let pendingUnlockTheme = null;
-
-  function openUnlockModal(themeId) {
-    pendingUnlockTheme = themeId;
-    unlockModal.hidden = false;
-    unlockModal.setAttribute('aria-hidden', 'false');
-  }
-  function closeUnlockModal() {
-    unlockModal.hidden = true;
-    unlockModal.setAttribute('aria-hidden', 'true');
-    pendingUnlockTheme = null;
-  }
-
-  // For now, the unlock button is a placeholder: it grants Pro
-  // immediately and persists it. When real billing is wired up (e.g. via
-  // a backend license check), this is the only spot that needs to change.
-  unlockBtn.addEventListener('click', async () => {
-    const themeId = pendingUnlockTheme;
-    settings = { ...settings, isPro: true };
-    // If they tapped a specific theme to trigger the unlock, switch to it.
-    if (themeId) settings.theme = themeId;
-    applySettings(settings);
-    await saveSettings(settings);
-    closeUnlockModal();
-  });
-
-  unlockModal.addEventListener('click', (e) => {
-    if (e.target instanceof HTMLElement && e.target.dataset.closeUnlock === 'true') {
-      closeUnlockModal();
-    }
-  });
 
   // -----------------------------------------------------------------------
   // Color popover open/close
@@ -720,8 +703,12 @@
       const targetId  = fav.id;
       if (!draggedId || draggedId === targetId) return;
 
+      const previous = favorites.slice();
       reorderFavorites(draggedId, targetId);
-      await saveFavorites(favorites);
+      const result = await saveFavorites(favorites);
+      if (!result.ok) {
+        favorites = previous;
+      }
       render();
     });
 
@@ -891,8 +878,9 @@
    * already small and lossless at any size.
    */
   function processIconFile(file) {
-    const MAX_BYTES = 5 * 1024 * 1024; // 5MB sanity cap on input
-    if (file.size > MAX_BYTES) {
+    const MAX_INPUT_BYTES = 5 * 1024 * 1024;  // 5MB cap on raw input file
+    const MAX_STORED_BYTES = 500 * 1024;      // 500KB cap on stored data URL
+    if (file.size > MAX_INPUT_BYTES) {
       showIconError('Image is too large (max 5MB).');
       return;
     }
@@ -901,8 +889,14 @@
     reader.onerror = () => showIconError('Could not read that file.');
     reader.onload = () => {
       const dataUrl = reader.result;
-      // SVG: store directly. Canvas-rasterizing SVG defeats its purpose.
+      // SVG: store directly (canvas-rasterizing SVG defeats its purpose),
+      // but only if the file itself is small. Big SVGs are rare but
+      // possible — reject before they hit storage.
       if (file.type === 'image/svg+xml') {
+        if (typeof dataUrl === 'string' && dataUrl.length > MAX_STORED_BYTES) {
+          showIconError('SVG is too detailed to store. Try a simpler image.');
+          return;
+        }
         setPendingCustomIcon(dataUrl);
         return;
       }
@@ -921,7 +915,12 @@
         ctx.drawImage(img, 0, 0, w, h);
         // PNG preserves transparency for icons with alpha channels.
         try {
-          setPendingCustomIcon(canvas.toDataURL('image/png'));
+          const out = canvas.toDataURL('image/png');
+          if (out.length > MAX_STORED_BYTES) {
+            showIconError('Image still too large after resize. Try a smaller one.');
+            return;
+          }
+          setPendingCustomIcon(out);
         } catch (err) {
           showIconError('Could not process that image.');
         }
@@ -986,6 +985,10 @@
       return;
     }
 
+    // Snapshot favorites so we can roll back if the write fails (e.g.
+    // hitting the chrome.storage.local 10MB quota with custom icons).
+    const previous = favorites;
+
     if (editingId) {
       favorites = favorites.map((f) =>
         f.id === editingId
@@ -1002,7 +1005,17 @@
       });
     }
 
-    await saveFavorites(favorites);
+    const result = await saveFavorites(favorites);
+    if (!result.ok) {
+      // Roll back so the visible UI matches what's actually persisted.
+      favorites = previous;
+      // Quota errors typically mention 'QUOTA' — give a friendly hint.
+      const isQuota = /quota/i.test(result.error || '');
+      showError(isQuota
+        ? 'Out of storage space. Try removing custom icons from a few favorites first.'
+        : 'Could not save. Please try again.');
+      return;
+    }
     render();
     closeModal();
   }
@@ -1013,8 +1026,14 @@
     const fav = favorites.find((f) => f.id === editingId);
     const ok = confirm(`Delete "${fav ? fav.title : 'this favorite'}"?`);
     if (!ok) return;
+    const previous = favorites;
     favorites = favorites.filter((f) => f.id !== editingId);
-    await saveFavorites(favorites);
+    const result = await saveFavorites(favorites);
+    if (!result.ok) {
+      favorites = previous;
+      alert('Could not save changes. Please try again.');
+      return;
+    }
     render();
     closeModal();
   }
@@ -1105,7 +1124,6 @@
     if (e.key !== 'Escape') return;
     if (!enginePopover.hidden) { closeEnginePopover(); return; }
     if (!colorMenu.hidden) { closeColorMenu(); return; }
-    if (!unlockModal.hidden) { closeUnlockModal(); return; }
     if (!modal.hidden) closeModal();
     else if (!settingsModal.hidden) closeSettingsModal();
   });

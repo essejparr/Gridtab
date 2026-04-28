@@ -471,31 +471,8 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 13px;
   font-weight: 500;
 }
-.theme-card-pro {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 2px 5px;
-  border-radius: 4px;
-}
 .theme-card.is-locked { opacity: 0.85; }
 .theme-card.is-locked .theme-card-name { color: var(--text-muted); }
-
-/* Unlock dialog */
-.unlock-card { max-width: 380px; }
-.unlock-copy {
-  margin: -8px 0 16px;
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
 
 /* ---------- Grid of tiles ---------- */
 
