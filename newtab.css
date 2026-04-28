@@ -29,8 +29,7 @@
   --tile-min: 140px;
   --tile-max: 180px;
   --grid-gap: 16px;
-  --icon-size: 88px;       /* favicon container size */
-  --icon-img-size: 56px;   /* favicon image size inside the container */
+  --icon-fill: 80%;        /* favicon container size as a fraction of the tile */
 }
 
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
@@ -304,19 +303,17 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Padding scales with the tile, with a sane minimum, so small tiles
-     don't waste space on a fixed 16px frame. */
-  padding: clamp(8px, 8cqw, 16px);
+  /* Minimal padding — the icon-fill percentage controls breathing room. */
+  padding: 4px;
   min-height: 0;
 }
 
 .tile-favicon {
-  /* The favicon target size is set via --icon-size, but it's capped at
-     70% of the tile width (using container query units) so it can never
-     force the tile to grow taller than wide. min-width:0 lets the flex
-     child shrink past its content size when the tile is small. */
-  width:  min(var(--icon-size),  70cqw);
-  height: min(var(--icon-size),  70cqw);
+  /* Container size scales with the tile via a single fill percentage.
+     The aspect-ratio + width pair keeps it square regardless of flex
+     sizing; min-width:0 lets the flex child actually shrink. */
+  width: var(--icon-fill);
+  aspect-ratio: 1 / 1;
   min-width: 0;
   border-radius: 18px;
   background: var(--bg);
@@ -324,22 +321,23 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: transform .25s ease, width .2s ease, height .2s ease;
+  transition: transform .25s ease, width .2s ease;
 }
 .tile:hover .tile-favicon { transform: scale(1.06); }
 
 .tile-favicon img {
-  /* Same cap on the inner image — it's the favicon's pixel size, but it
-     should never exceed the container that holds it. */
-  width:  min(var(--icon-img-size), 50cqw);
-  height: min(var(--icon-img-size), 50cqw);
+  /* Image fills 70% of its rounded container, leaving a small inset that
+     reads as a "padded app icon" look. */
+  width: 70%;
+  height: 70%;
   object-fit: contain;
 }
 
 /* Letter fallback shown when a favicon image fails to load. */
 .tile-favicon-letter {
   font-weight: 700;
-  font-size: calc(var(--icon-img-size) * 0.6);
+  /* Scales with the tile size, with sane bounds. */
+  font-size: clamp(18px, 18cqw, 56px);
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: -0.02em;

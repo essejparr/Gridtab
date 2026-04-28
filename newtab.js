@@ -33,9 +33,9 @@
       relaxed: { '--grid-gap': '28px' },
     },
     iconSize: {
-      sm: { '--icon-size': '64px',  '--icon-img-size': '40px' },
-      md: { '--icon-size': '88px',  '--icon-img-size': '56px' },
-      lg: { '--icon-size': '112px', '--icon-img-size': '72px' },
+      sm: { '--icon-fill': '65%' },
+      md: { '--icon-fill': '80%' },
+      lg: { '--icon-fill': '95%' },
     },
   };
 
