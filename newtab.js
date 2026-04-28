@@ -55,11 +55,22 @@
   const settingsBtn    = document.getElementById('settingsBtn');
   const settingsModal  = document.getElementById('settingsModal');
   const resetBtn       = document.getElementById('resetSettingsBtn');
+  // Custom icon uploader (in the favorite edit modal).
+  const iconPreview    = document.getElementById('iconPreview');
+  const iconFileInput  = document.getElementById('iconFileInput');
+  const iconUploadBtn  = document.getElementById('iconUploadBtn');
+  const iconPasteBtn   = document.getElementById('iconPasteBtn');
+  const iconClearBtn   = document.getElementById('iconClearBtn');
+  const iconUrlInput   = document.getElementById('iconUrlInput');
+  const iconError      = document.getElementById('iconError');
 
   // In-memory state.
   let favorites = [];
   let settings  = { ...DEFAULT_SETTINGS };
   let editingId = null;
+  // Holds the custom icon (data URL or http(s) URL) for the favorite
+  // currently being added/edited. Null means "no custom icon".
+  let pendingCustomIcon = null;
 
   // -----------------------------------------------------------------------
   // Storage helpers (chrome.storage.local)
@@ -199,25 +210,25 @@
   };
 
   /**
-   * Returns an ordered list of favicon URLs to try for a given site.
+   * Returns an ordered list of favicon URLs to try for a given favorite.
    * The <img> in buildTile walks the list on each onerror until one
    * loads, then falls back to a letter avatar if all fail.
    *
-   * Strategy: if the domain is in our overrides map, try the high-res
-   * source first. Otherwise (or as fallback) use Google's favicon
-   * service which is reliable but capped at the resolution sites
-   * advertise — fine for most, blurry for the ones in the override map.
+   * Priority: user's custom icon → override map → Google → letter.
    */
-  function faviconSources(urlStr) {
-    const domain = getDomain(urlStr);
+  function faviconSources(fav) {
+    const domain = getDomain(fav.url);
     const encoded = encodeURIComponent(domain);
     const sources = [];
+    // 1. User's custom icon always wins when provided.
+    if (fav.customIcon) sources.push(fav.customIcon);
+    // 2. Hand-curated overrides for sites Google serves blurry.
     const override = ICON_OVERRIDES[domain];
     if (override) {
-      // Override may be a single URL or an array of URLs to try in order.
       if (Array.isArray(override)) sources.push(...override);
       else sources.push(override);
     }
+    // 3. Google as the universal reliable fallback.
     sources.push(`https://www.google.com/s2/favicons?sz=128&domain=${encoded}`);
     return sources;
   }
@@ -329,7 +340,7 @@
 
     // Walk the source list on each error; only show the letter avatar
     // after every source has failed.
-    const sources = faviconSources(fav.url);
+    const sources = faviconSources(fav);
     let sourceIndex = 0;
     img.src = sources[0];
     img.onerror = () => {
@@ -383,6 +394,7 @@
     deleteBtn.hidden = true;
     titleInput.value = '';
     urlInput.value = '';
+    setPendingCustomIcon(null);
     showModal();
   }
 
@@ -395,6 +407,7 @@
     deleteBtn.hidden = false;
     titleInput.value = fav.title;
     urlInput.value = fav.url;
+    setPendingCustomIcon(fav.customIcon || null);
     showModal();
   }
 
@@ -410,6 +423,7 @@
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
     editingId = null;
+    pendingCustomIcon = null;
   }
 
   function showError(msg) {
@@ -419,7 +433,128 @@
   function clearError() {
     urlError.textContent = '';
     urlError.hidden = true;
+    iconError.textContent = '';
+    iconError.hidden = true;
   }
+
+  // -----------------------------------------------------------------------
+  // Custom icon uploader
+  // -----------------------------------------------------------------------
+
+  /** Update the in-memory pending icon and refresh the preview UI. */
+  function setPendingCustomIcon(value) {
+    pendingCustomIcon = value || null;
+    iconPreview.innerHTML = '';
+    if (pendingCustomIcon) {
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = pendingCustomIcon;
+      img.referrerPolicy = 'no-referrer';
+      iconPreview.appendChild(img);
+      iconClearBtn.hidden = false;
+    } else {
+      const empty = document.createElement('span');
+      empty.className = 'icon-preview-empty';
+      empty.textContent = 'No icon';
+      iconPreview.appendChild(empty);
+      iconClearBtn.hidden = true;
+    }
+    // Hide the URL input when a custom icon is set; show again when cleared.
+    iconUrlInput.hidden = true;
+    iconUrlInput.value = '';
+  }
+
+  function showIconError(msg) {
+    iconError.textContent = msg;
+    iconError.hidden = false;
+  }
+
+  /**
+   * Read the chosen file and resize it to a max of 256×256 (preserving
+   * aspect ratio) before storing as a data URL. Resizing keeps storage
+   * usage low — chrome.storage.local has a 10MB total quota.
+   *
+   * SVGs are stored as-is (data URL of the original) since they're
+   * already small and lossless at any size.
+   */
+  function processIconFile(file) {
+    const MAX_BYTES = 5 * 1024 * 1024; // 5MB sanity cap on input
+    if (file.size > MAX_BYTES) {
+      showIconError('Image is too large (max 5MB).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => showIconError('Could not read that file.');
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      // SVG: store directly. Canvas-rasterizing SVG defeats its purpose.
+      if (file.type === 'image/svg+xml') {
+        setPendingCustomIcon(dataUrl);
+        return;
+      }
+      // Raster: load into an Image, draw to canvas, re-export downscaled.
+      const img = new Image();
+      img.onerror = () => showIconError('That file is not a valid image.');
+      img.onload = () => {
+        const MAX_DIM = 256;
+        const ratio = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        // PNG preserves transparency for icons with alpha channels.
+        try {
+          setPendingCustomIcon(canvas.toDataURL('image/png'));
+        } catch (err) {
+          showIconError('Could not process that image.');
+        }
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Wire up the upload button → file picker.
+  iconUploadBtn.addEventListener('click', () => {
+    clearError();
+    iconFileInput.click();
+  });
+  iconFileInput.addEventListener('change', () => {
+    const file = iconFileInput.files && iconFileInput.files[0];
+    iconFileInput.value = ''; // allow re-picking the same file later
+    if (file) processIconFile(file);
+  });
+
+  // Toggle the URL input.
+  iconPasteBtn.addEventListener('click', () => {
+    clearError();
+    iconUrlInput.hidden = !iconUrlInput.hidden;
+    if (!iconUrlInput.hidden) {
+      iconUrlInput.value = '';
+      setTimeout(() => iconUrlInput.focus(), 30);
+    }
+  });
+
+  // Validate and apply when the user finishes typing/pasting a URL.
+  iconUrlInput.addEventListener('change', () => {
+    const value = iconUrlInput.value.trim();
+    if (!value) return;
+    const normalized = normalizeUrl(value);
+    if (!normalized) {
+      showIconError('That doesn\u2019t look like a valid image URL.');
+      return;
+    }
+    setPendingCustomIcon(normalized);
+  });
+
+  iconClearBtn.addEventListener('click', () => {
+    clearError();
+    setPendingCustomIcon(null);
+  });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -440,13 +575,16 @@
 
     if (editingId) {
       favorites = favorites.map((f) =>
-        f.id === editingId ? { ...f, title, url: normalized } : f
+        f.id === editingId
+          ? { ...f, title, url: normalized, customIcon: pendingCustomIcon || null }
+          : f
       );
     } else {
       favorites.push({
         id: generateId(),
         title,
         url: normalized,
+        customIcon: pendingCustomIcon || null,
         createdAt: Date.now(),
       });
     }

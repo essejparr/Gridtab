@@ -69,6 +69,34 @@
                  placeholder="github.com" required />
           <span id="urlError" class="field-error" hidden></span>
         </label>
+
+        <!-- Custom icon: upload a file or paste an image URL. Optional —
+             when empty, the tile uses the auto-detected favicon. -->
+        <div class="field">
+          <span class="field-label">Custom icon (optional)</span>
+          <div class="icon-uploader">
+            <div class="icon-preview" id="iconPreview" aria-hidden="true">
+              <span class="icon-preview-empty">No icon</span>
+            </div>
+            <div class="icon-uploader-controls">
+              <input id="iconFileInput" type="file"
+                     accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon"
+                     hidden />
+              <button type="button" class="btn btn-ghost btn-sm" id="iconUploadBtn">
+                Upload image
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="iconPasteBtn">
+                Paste URL
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="iconClearBtn" hidden>
+                Remove
+              </button>
+            </div>
+          </div>
+          <input id="iconUrlInput" type="text" class="input"
+                 placeholder="https://example.com/icon.png" hidden />
+          <span id="iconError" class="field-error" hidden></span>
+        </div>
         <div class="modal-actions">
           <button id="deleteBtn" type="button" class="btn btn-danger" hidden>
             Delete
