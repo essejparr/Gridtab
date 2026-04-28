@@ -8,23 +8,57 @@
   'use strict';
 
   const STORAGE_KEY = 'favorites';
+  const SETTINGS_KEY = 'settings';
+
+  // Default settings. Each maps to one or more CSS variables on :root.
+  const DEFAULT_SETTINGS = {
+    tileSize: 'md',   // sm | md | lg
+    gap:      'normal', // tight | normal | relaxed
+    iconSize: 'md',   // sm | md | lg
+    theme:    'auto', // auto | light | dark
+  };
+
+  // Maps each setting value to the CSS variable values it should produce.
+  // Keeping this here (not in CSS) lets us validate stored values and fall
+  // back cleanly if the user edits storage directly or upgrades schemas.
+  const SETTING_VALUES = {
+    tileSize: {
+      sm: { '--tile-min': '110px' },
+      md: { '--tile-min': '140px' },
+      lg: { '--tile-min': '180px' },
+    },
+    gap: {
+      tight:   { '--grid-gap': '8px' },
+      normal:  { '--grid-gap': '16px' },
+      relaxed: { '--grid-gap': '28px' },
+    },
+    iconSize: {
+      sm: { '--icon-size': '44px', '--icon-img-size': '26px' },
+      md: { '--icon-size': '56px', '--icon-img-size': '36px' },
+      lg: { '--icon-size': '72px', '--icon-img-size': '48px' },
+    },
+  };
 
   // DOM references
-  const grid        = document.getElementById('grid');
-  const emptyState  = document.getElementById('emptyState');
-  const addBtn      = document.getElementById('addBtn');
-  const emptyAddBtn = document.getElementById('emptyAddBtn');
-  const modal       = document.getElementById('modal');
-  const modalTitle  = document.getElementById('modalTitle');
-  const form        = document.getElementById('favoriteForm');
-  const titleInput  = document.getElementById('titleInput');
-  const urlInput    = document.getElementById('urlInput');
-  const urlError    = document.getElementById('urlError');
-  const saveLabel   = document.getElementById('saveLabel');
-  const deleteBtn   = document.getElementById('deleteBtn');
+  const grid           = document.getElementById('grid');
+  const emptyState     = document.getElementById('emptyState');
+  const addBtn         = document.getElementById('addBtn');
+  const emptyAddBtn    = document.getElementById('emptyAddBtn');
+  const modal          = document.getElementById('modal');
+  const modalTitle     = document.getElementById('modalTitle');
+  const form           = document.getElementById('favoriteForm');
+  const titleInput     = document.getElementById('titleInput');
+  const urlInput       = document.getElementById('urlInput');
+  const urlError       = document.getElementById('urlError');
+  const saveLabel      = document.getElementById('saveLabel');
+  const deleteBtn      = document.getElementById('deleteBtn');
+  const settingsBtn    = document.getElementById('settingsBtn');
+  const settingsModal  = document.getElementById('settingsModal');
+  const resetBtn       = document.getElementById('resetSettingsBtn');
 
-  // In-memory state. `editingId` is null when adding, or a string id when editing.
+  // In-memory state.
   let favorites = [];
+  let settings  = { ...DEFAULT_SETTINGS };
   let editingId = null;
 
   // -----------------------------------------------------------------------
@@ -43,6 +77,55 @@
   function saveFavorites(list) {
     return new Promise((resolve) => {
       chrome.storage.local.set({ [STORAGE_KEY]: list }, () => resolve());
+    });
+  }
+
+  function loadSettings() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([SETTINGS_KEY], (result) => {
+        const stored = result[SETTINGS_KEY] || {};
+        // Merge with defaults so missing keys (e.g. after a future schema
+        // change) get sensible fallbacks instead of undefined.
+        resolve({ ...DEFAULT_SETTINGS, ...stored });
+      });
+    });
+  }
+
+  function saveSettings(next) {
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ [SETTINGS_KEY]: next }, () => resolve());
+    });
+  }
+
+  /**
+   * Apply settings to the live document by writing CSS variables on :root
+   * and (for theme) toggling a data-theme attribute. Also updates the
+   * settings modal UI so the active button reflects current state.
+   */
+  function applySettings(s) {
+    const root = document.documentElement;
+
+    // Tile size, gap, icon size — write CSS variables.
+    for (const key of ['tileSize', 'gap', 'iconSize']) {
+      const valueMap = SETTING_VALUES[key][s[key]] || SETTING_VALUES[key][DEFAULT_SETTINGS[key]];
+      for (const [varName, varValue] of Object.entries(valueMap)) {
+        root.style.setProperty(varName, varValue);
+      }
+    }
+
+    // Theme — 'auto' removes the override so prefers-color-scheme takes over.
+    if (s.theme === 'auto') {
+      root.removeAttribute('data-theme');
+    } else {
+      root.setAttribute('data-theme', s.theme);
+    }
+
+    // Reflect active state on segmented control buttons.
+    const buttons = settingsModal.querySelectorAll('.seg-btn');
+    buttons.forEach((btn) => {
+      const key = btn.dataset.setting;
+      const active = btn.dataset.value === s[key];
+      btn.setAttribute('aria-checked', active ? 'true' : 'false');
     });
   }
 
@@ -89,7 +172,7 @@
    */
   function faviconUrl(urlStr) {
     const domain = getDomain(urlStr);
-    return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
+    return `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`;
   }
 
   // -----------------------------------------------------------------------
@@ -122,9 +205,22 @@
     tile.dataset.id = fav.id;
     tile.setAttribute('aria-label', `${fav.title} — ${getDomain(fav.url)}`);
 
-    // Top row: favicon + edit button
-    const top = document.createElement('div');
-    top.className = 'tile-top';
+    // Edit button floats over the tile, top-right.
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'tile-edit';
+    editBtn.setAttribute('aria-label', `Edit ${fav.title}`);
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', (e) => {
+      // Prevent navigation when the edit button is clicked.
+      e.preventDefault();
+      e.stopPropagation();
+      openEditModal(fav.id);
+    });
+
+    // Hero region: large centered favicon with letter-avatar fallback.
+    const hero = document.createElement('div');
+    hero.className = 'tile-hero';
 
     const faviconWrap = document.createElement('div');
     faviconWrap.className = 'tile-favicon';
@@ -142,25 +238,11 @@
       faviconWrap.appendChild(letter);
     };
     faviconWrap.appendChild(img);
+    hero.appendChild(faviconWrap);
 
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'tile-edit';
-    editBtn.setAttribute('aria-label', `Edit ${fav.title}`);
-    editBtn.textContent = '✎';
-    editBtn.addEventListener('click', (e) => {
-      // Prevent navigation when the edit button is clicked.
-      e.preventDefault();
-      e.stopPropagation();
-      openEditModal(fav.id);
-    });
-
-    top.appendChild(faviconWrap);
-    top.appendChild(editBtn);
-
-    // Body: title + domain
-    const body = document.createElement('div');
-    body.className = 'tile-body';
+    // Footer: title + domain.
+    const footer = document.createElement('div');
+    footer.className = 'tile-footer';
 
     const title = document.createElement('div');
     title.className = 'tile-title';
@@ -170,11 +252,12 @@
     domain.className = 'tile-domain';
     domain.textContent = getDomain(fav.url);
 
-    body.appendChild(title);
-    body.appendChild(domain);
+    footer.appendChild(title);
+    footer.appendChild(domain);
 
-    tile.appendChild(top);
-    tile.appendChild(body);
+    tile.appendChild(editBtn);
+    tile.appendChild(hero);
+    tile.appendChild(footer);
 
     return tile;
   }
@@ -284,6 +367,50 @@
   }
 
   // -----------------------------------------------------------------------
+  // Settings modal
+  // -----------------------------------------------------------------------
+
+  function openSettingsModal() {
+    settingsModal.hidden = false;
+    settingsModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeSettingsModal() {
+    settingsModal.hidden = true;
+    settingsModal.setAttribute('aria-hidden', 'true');
+  }
+
+  // Segmented buttons: clicking one updates the matching setting and saves.
+  settingsModal.addEventListener('click', async (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    // Backdrop / close buttons
+    if (target.dataset.closeSettings === 'true') {
+      closeSettingsModal();
+      return;
+    }
+
+    // Segmented control buttons
+    if (target.classList.contains('seg-btn')) {
+      const key = target.dataset.setting;
+      const value = target.dataset.value;
+      if (!key || !value || settings[key] === value) return;
+      settings = { ...settings, [key]: value };
+      applySettings(settings);
+      await saveSettings(settings);
+    }
+  });
+
+  resetBtn.addEventListener('click', async () => {
+    settings = { ...DEFAULT_SETTINGS };
+    applySettings(settings);
+    await saveSettings(settings);
+  });
+
+  settingsBtn.addEventListener('click', openSettingsModal);
+
+  // -----------------------------------------------------------------------
   // Event wiring
   // -----------------------------------------------------------------------
 
@@ -299,16 +426,23 @@
     }
   });
 
-  // Esc closes the modal.
+  // Esc closes whichever modal is open.
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modal.hidden) closeModal();
+    if (e.key !== 'Escape') return;
+    if (!modal.hidden) closeModal();
+    else if (!settingsModal.hidden) closeSettingsModal();
   });
 
   // Live-sync if storage changes in another tab.
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes[STORAGE_KEY]) {
+    if (area !== 'local') return;
+    if (changes[STORAGE_KEY]) {
       favorites = changes[STORAGE_KEY].newValue || [];
       render();
+    }
+    if (changes[SETTINGS_KEY]) {
+      settings = { ...DEFAULT_SETTINGS, ...(changes[SETTINGS_KEY].newValue || {}) };
+      applySettings(settings);
     }
   });
 
@@ -317,7 +451,8 @@
   // -----------------------------------------------------------------------
 
   (async function init() {
-    favorites = await loadFavorites();
+    [favorites, settings] = await Promise.all([loadFavorites(), loadSettings()]);
+    applySettings(settings);
     render();
   })();
 })();

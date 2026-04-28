@@ -15,10 +15,21 @@
         </div>
         <h1 class="brand-name">GridTab</h1>
       </div>
-      <button id="addBtn" class="btn btn-primary" type="button">
-        <span class="btn-icon" aria-hidden="true">+</span>
-        <span>Add favorite</span>
-      </button>
+      <div class="header-actions">
+        <button id="settingsBtn" class="btn btn-ghost btn-icon-only" type="button"
+                aria-label="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <button id="addBtn" class="btn btn-primary" type="button">
+          <span class="btn-icon" aria-hidden="true">+</span>
+          <span>Add favorite</span>
+        </button>
+      </div>
     </header>
 
     <!-- Grid of favorite tiles. Populated by newtab.js. -->
@@ -72,6 +83,63 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal for app settings (tile size, spacing, icon size, theme). -->
+  <div id="settingsModal" class="modal" hidden aria-hidden="true">
+    <div class="modal-backdrop" data-close-settings="true"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle" class="modal-title">Settings</h2>
+
+      <div class="form">
+        <div class="field">
+          <span class="field-label">Tile size</span>
+          <div class="seg" role="radiogroup" aria-label="Tile size">
+            <button type="button" class="seg-btn" data-setting="tileSize" data-value="sm">Small</button>
+            <button type="button" class="seg-btn" data-setting="tileSize" data-value="md">Medium</button>
+            <button type="button" class="seg-btn" data-setting="tileSize" data-value="lg">Large</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Spacing between tiles</span>
+          <div class="seg" role="radiogroup" aria-label="Spacing between tiles">
+            <button type="button" class="seg-btn" data-setting="gap" data-value="tight">Tight</button>
+            <button type="button" class="seg-btn" data-setting="gap" data-value="normal">Normal</button>
+            <button type="button" class="seg-btn" data-setting="gap" data-value="relaxed">Relaxed</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Icon size</span>
+          <div class="seg" role="radiogroup" aria-label="Icon size">
+            <button type="button" class="seg-btn" data-setting="iconSize" data-value="sm">Small</button>
+            <button type="button" class="seg-btn" data-setting="iconSize" data-value="md">Medium</button>
+            <button type="button" class="seg-btn" data-setting="iconSize" data-value="lg">Large</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Theme</span>
+          <div class="seg" role="radiogroup" aria-label="Theme">
+            <button type="button" class="seg-btn" data-setting="theme" data-value="auto">Auto</button>
+            <button type="button" class="seg-btn" data-setting="theme" data-value="light">Light</button>
+            <button type="button" class="seg-btn" data-setting="theme" data-value="dark">Dark</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="resetSettingsBtn" type="button" class="btn btn-ghost">
+            Reset to defaults
+          </button>
+          <div class="modal-actions-right">
+            <button type="button" class="btn btn-primary" data-close-settings="true">
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

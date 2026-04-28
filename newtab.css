@@ -29,10 +29,14 @@
   --tile-min: 140px;
   --tile-max: 180px;
   --grid-gap: 16px;
+  --icon-size: 56px;       /* favicon container size */
+  --icon-img-size: 36px;   /* favicon image size inside the container */
 }
 
+/* Dark theme — applied either when the OS prefers dark (no manual setting)
+   or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -48,6 +52,23 @@
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
     --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1115;
+  --bg-elev: #161922;
+  --surface: #1c2030;
+  --surface-hover: #232838;
+  --border: #2a2f3d;
+  --border-strong: #3a4154;
+  --text: #f3f4f6;
+  --text-muted: #9aa3b2;
+  --text-subtle: #6b7384;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 * { box-sizing: border-box; }
@@ -166,6 +187,53 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 500;
 }
 
+/* Icon-only button (e.g. settings gear) — square, no text. */
+.btn-icon-only {
+  padding: 10px;
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Segmented control — used in the settings modal for choosing a value
+   from a small set of options. */
+.seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.seg-btn {
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.seg-btn:hover { color: var(--text); }
+.seg-btn[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.seg-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* ---------- Grid of tiles ---------- */
 
 .grid {
@@ -175,17 +243,16 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* Each tile is a perfect square (aspect-ratio 1) so the layout reads as
-   connected blocks. They wrap responsively because the grid uses auto-fill. */
+   connected blocks. The favicon is the hero — large and centered — with a
+   small footer strip showing the title and domain. */
 .tile {
   position: relative;
   aspect-ratio: 1 / 1;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   text-decoration: none;
   color: inherit;
   box-shadow: var(--shadow-sm);
@@ -204,40 +271,78 @@ button { font-family: inherit; cursor: pointer; }
   outline-offset: 2px;
 }
 
-.tile-top {
+/* Hero region: large centered favicon. Takes ~65% of the tile height. */
+.tile-hero {
+  flex: 1 1 auto;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 0;
 }
 
 .tile-favicon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  border-radius: 14px;
   background: var(--bg);
-  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  flex-shrink: 0;
+  transition: transform .25s ease, width .2s ease, height .2s ease;
 }
-.tile-favicon img { width: 18px; height: 18px; }
+.tile:hover .tile-favicon { transform: scale(1.06); }
+
+.tile-favicon img {
+  width: var(--icon-img-size);
+  height: var(--icon-img-size);
+  object-fit: contain;
+}
 
 /* Letter fallback shown when a favicon image fails to load. */
 .tile-favicon-letter {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 26px;
   color: var(--accent);
   text-transform: uppercase;
+  letter-spacing: -0.02em;
 }
 
-/* Edit button: appears on hover, top-right. */
+/* Footer strip: title + domain. Compact, sits at the bottom of the tile. */
+.tile-footer {
+  flex: 0 0 auto;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elev);
+  min-width: 0;
+}
+.tile-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.tile-domain {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* Edit button: floats top-right, appears on hover. */
 .tile-edit {
-  background: transparent;
-  border: none;
-  color: var(--text-subtle);
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -246,37 +351,16 @@ button { font-family: inherit; cursor: pointer; }
   justify-content: center;
   opacity: 0;
   transition: opacity .15s ease, background-color .15s ease, color .15s ease;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1;
   padding: 0;
+  z-index: 1;
 }
 .tile:hover .tile-edit,
 .tile:focus-within .tile-edit { opacity: 1; }
 .tile-edit:hover {
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text);
-}
-
-.tile-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.tile-title {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tile-domain {
-  font-size: 12px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ---------- Empty state ---------- */
@@ -286,6 +370,8 @@ button { font-family: inherit; cursor: pointer; }
   justify-content: center;
   padding: 32px 0;
 }
+/* The [hidden] attribute must win over the .empty / .modal display rules. */
+[hidden] { display: none !important; }
 .empty-card {
   text-align: center;
   max-width: 420px;

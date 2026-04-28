@@ -10,6 +10,7 @@ Built with Manifest V3, plain HTML/CSS/JS, and `chrome.storage.local`. No depend
 
 - **Custom New Tab dashboard** — opens whenever you create a new tab.
 - **Square, responsive tiles** — favorites display as a grid of equally-sized blocks that wrap automatically on any screen size.
+- **Customizable layout** — settings panel lets you adjust tile size, spacing between tiles, icon size, and theme (auto/light/dark).
 - **Add / edit / delete favorites** — manage your list from a simple modal.
 - **URL normalization** — entering `github.com` automatically becomes `https://github.com`. Invalid URLs are rejected with inline feedback.
 - **Favicons** — fetched on the fly from a public favicon service, with a letter-avatar fallback if the favicon can't load.
