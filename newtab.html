@@ -9,6 +9,20 @@
 <body>
   <main class="page">
     <header class="header">
+      <!-- Search bar — anchored left, grows to fill, navigates to the
+           chosen engine on Enter. Engine selector on the left opens a
+           popover with the other supported engines. -->
+      <form id="searchForm" class="search" role="search" autocomplete="off">
+        <button id="engineBtn" type="button" class="search-engine-btn"
+                aria-label="Choose search engine" aria-haspopup="true"
+                aria-expanded="false">
+          <span id="engineIcon" class="search-engine-icon" aria-hidden="true"></span>
+        </button>
+        <input id="searchInput" type="text" class="search-input"
+               placeholder="Search the web…" aria-label="Search the web" />
+        <div id="enginePopover" class="engine-popover" hidden role="menu"></div>
+      </form>
+
       <div class="header-actions">
         <button id="settingsBtn" class="btn btn-ghost btn-icon-only" type="button"
                 aria-label="Settings">

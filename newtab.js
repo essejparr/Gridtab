@@ -18,6 +18,7 @@
     theme:    'auto',   // see THEMES below
     accentColor: 'default', // see BUTTON_COLORS below; 'default' = theme accent
     unlockedThemes: [], // list of theme ids the user has paid to unlock
+    searchEngine: 'google', // see SEARCH_ENGINES below
   };
 
   /**
@@ -52,6 +53,54 @@
     { id: 'purple',  name: 'Purple', bg: '#7c3aed',  hover: '#6d28d9' },
     { id: 'teal',    name: 'Teal',   bg: '#0d9488',  hover: '#0f766e' },
     { id: 'white',   name: 'White',  bg: '#ffffff',  hover: '#f3f4f6' },
+  ];
+
+  /**
+   * Search engine registry. Each engine has a URL template with {q} as
+   * the placeholder for the URL-encoded query, plus an inline SVG icon
+   * (so we don't depend on external favicon services for the chrome).
+   */
+  const SEARCH_ENGINES = [
+    {
+      id: 'google', name: 'Google',
+      url: 'https://www.google.com/search?q={q}',
+      icon: `<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C39.7 35.5 44 30.3 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>`,
+    },
+    {
+      id: 'bing', name: 'Bing',
+      url: 'https://www.bing.com/search?q={q}',
+      icon: `<svg viewBox="0 0 48 48"><defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37C2B1"/><stop offset="1" stop-color="#0078D4"/></linearGradient></defs><path fill="url(#bg1)" d="M11 4v32l9-3 9 4-12 7v-2L11 44V4z"/><path fill="url(#bg1)" d="M11 4l9 3v18l9 3 8-3-17 17V25L11 22z" opacity=".95"/></svg>`,
+    },
+    {
+      id: 'duckduckgo', name: 'DuckDuckGo',
+      url: 'https://duckduckgo.com/?q={q}',
+      icon: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#DE5833"/><path fill="#fff" d="M28 14c-2 1-3 2-3 5 0 4 4 5 4 9 0 5-4 6-4 12h-6l1-7c-3-1-6-3-7-7 0-2 1-3 2-3l-2-2c0-2 3-3 6-3 5 0 7 1 9-4z"/><circle cx="29" cy="20" r="2" fill="#FFF"/><circle cx="29" cy="20" r="1" fill="#000"/></svg>`,
+    },
+    {
+      id: 'brave', name: 'Brave Search',
+      url: 'https://search.brave.com/search?q={q}',
+      icon: `<svg viewBox="0 0 48 48"><path fill="#FB542B" d="M24 4 12 9l-3 5 2 8 4 16 9 6 9-6 4-16 2-8-3-5z"/><path fill="#fff" d="m24 14-6 4 3 5-3 5 6 6 6-6-3-5 3-5z" opacity=".85"/></svg>`,
+    },
+    {
+      id: 'ecosia', name: 'Ecosia',
+      url: 'https://www.ecosia.org/search?q={q}',
+      icon: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#36A86E"/><path fill="#fff" d="M14 30c4 4 12 4 18 0-2-1-4-1-7-1l-3-3c0-3 1-5 3-7 3 0 5 0 7-1-6-4-14-4-18 0-3 4-3 8 0 12z"/></svg>`,
+    },
+    {
+      id: 'kagi', name: 'Kagi',
+      url: 'https://kagi.com/search?q={q}',
+      icon: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#FFB319"/><path fill="#000" d="M16 14h4v8l8-8h5l-9 9 10 11h-5l-9-10v10h-4z"/></svg>`,
+    },
+    {
+      id: 'perplexity', name: 'Perplexity',
+      url: 'https://www.perplexity.ai/?q={q}',
+      icon: `<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#1F1F1F"/><path fill="#20B8A6" d="M24 8 8 18v12l16 10 16-10V18zm0 4 11 7-11 7-11-7zm-12 9 11 7v11l-11-7zm24 0v11l-11 7V28z"/></svg>`,
+    },
+    {
+      id: 'youtube', name: 'YouTube',
+      url: 'https://www.youtube.com/results?search_query={q}',
+      icon: `<svg viewBox="0 0 48 48"><rect x="4" y="10" width="40" height="28" rx="6" fill="#FF0000"/><path fill="#fff" d="m20 18 12 6-12 6z"/></svg>`,
+    },
   ];
 
   // Maps each setting value to the CSS variable values it should produce.
@@ -100,6 +149,12 @@
   const themeGrid      = document.getElementById('themeGrid');
   const unlockModal    = document.getElementById('unlockModal');
   const unlockBtn      = document.getElementById('unlockBtn');
+  // Search bar + engine popover.
+  const searchForm     = document.getElementById('searchForm');
+  const searchInput    = document.getElementById('searchInput');
+  const engineBtn      = document.getElementById('engineBtn');
+  const engineIcon     = document.getElementById('engineIcon');
+  const enginePopover  = document.getElementById('enginePopover');
   // Custom icon uploader (in the favorite edit modal).
   const iconPreview    = document.getElementById('iconPreview');
   const iconFileInput  = document.getElementById('iconFileInput');
@@ -385,6 +440,88 @@
     e.preventDefault();
     if (colorMenu.hidden) openColorMenu();
     else closeColorMenu();
+  });
+
+  // -----------------------------------------------------------------------
+  // Search bar
+  // -----------------------------------------------------------------------
+
+  function getCurrentEngine() {
+    return SEARCH_ENGINES.find((e) => e.id === settings.searchEngine)
+        || SEARCH_ENGINES[0];
+  }
+
+  /** Render the engine icon inside the search-bar's left button. */
+  function renderEngineButton() {
+    const engine = getCurrentEngine();
+    engineIcon.innerHTML = engine.icon;
+    engineBtn.title = `Search with ${engine.name}`;
+    searchInput.placeholder = `Search ${engine.name}…`;
+  }
+
+  /** Render the engine popover list. */
+  function renderEnginePopover() {
+    enginePopover.innerHTML = '';
+    for (const engine of SEARCH_ENGINES) {
+      const opt = document.createElement('button');
+      opt.type = 'button';
+      opt.className = 'engine-option';
+      opt.setAttribute('role', 'menuitemradio');
+      opt.setAttribute('aria-checked',
+        settings.searchEngine === engine.id ? 'true' : 'false');
+
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'engine-option-icon';
+      iconWrap.innerHTML = engine.icon;
+
+      const name = document.createElement('span');
+      name.className = 'engine-option-name';
+      name.textContent = engine.name;
+
+      opt.appendChild(iconWrap);
+      opt.appendChild(name);
+      opt.addEventListener('click', async () => {
+        if (settings.searchEngine !== engine.id) {
+          settings = { ...settings, searchEngine: engine.id };
+          renderEngineButton();
+          await saveSettings(settings);
+        }
+        closeEnginePopover();
+        searchInput.focus();
+      });
+      enginePopover.appendChild(opt);
+    }
+  }
+
+  function openEnginePopover() {
+    renderEnginePopover();
+    enginePopover.hidden = false;
+    engineBtn.setAttribute('aria-expanded', 'true');
+    setTimeout(() => document.addEventListener('click', outsideEnginePopover), 0);
+  }
+  function closeEnginePopover() {
+    enginePopover.hidden = true;
+    engineBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', outsideEnginePopover);
+  }
+  function outsideEnginePopover(e) {
+    if (!searchForm.contains(e.target)) closeEnginePopover();
+  }
+
+  engineBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (enginePopover.hidden) openEnginePopover();
+    else closeEnginePopover();
+  });
+
+  // Submit: build the engine URL with the query and navigate.
+  searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const query = searchInput.value.trim();
+    if (!query) return;
+    const engine = getCurrentEngine();
+    const url = engine.url.replace('{q}', encodeURIComponent(query));
+    window.location.href = url;
   });
 
   // -----------------------------------------------------------------------
@@ -967,6 +1104,7 @@
   // Esc closes whichever modal/popover is open.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (!enginePopover.hidden) { closeEnginePopover(); return; }
     if (!colorMenu.hidden) { closeColorMenu(); return; }
     if (!unlockModal.hidden) { closeUnlockModal(); return; }
     if (!modal.hidden) closeModal();
@@ -983,6 +1121,7 @@
     if (changes[SETTINGS_KEY]) {
       settings = { ...DEFAULT_SETTINGS, ...(changes[SETTINGS_KEY].newValue || {}) };
       applySettings(settings);
+      renderEngineButton();
     }
   });
 
@@ -993,6 +1132,7 @@
   (async function init() {
     [favorites, settings] = await Promise.all([loadFavorites(), loadSettings()]);
     applySettings(settings);
+    renderEngineButton();
     render();
   })();
 })();
