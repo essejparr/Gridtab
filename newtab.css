@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -187,6 +187,56 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Neon (Pro) — Tron / Akira / hacker-terminal energy. Background is
+   a deep teal-leaning black (not pure black, which would feel flat
+   and cheap with cyan), so the cyan reads as glowing OUT of the dark
+   rather than just sitting on it. The accent is electric cyan, a
+   high-energy counterpart to Synthwave's warm magenta. Borders carry
+   a subtle teal undertone for depth. Shadows lean cyan so hover
+   effects feel like an electric pulse, not an ordinary drop shadow. */
+:root[data-theme="neon"] {
+  --bg: #04141a;
+  --bg-elev: #072028;
+  --surface: #0a2a35;
+  --surface-hover: #103a48;
+  --border: #0d3a44;
+  --border-strong: #176376;
+  --text: #d8f5f0;
+  --text-muted: #6da7a3;
+  --text-subtle: #4a7a78;
+  --accent: #22f5e3;
+  --accent-hover: #5ffae8;
+  --accent-text: #04141a;
+  --shadow-sm: 0 1px 2px rgba(34, 245, 227, 0.12);
+  --shadow-md: 0 4px 16px rgba(34, 245, 227, 0.18);
+  --shadow-lg: 0 12px 36px rgba(0, 200, 200, 0.32);
+}
+
+/* Polaroid (Pro) — analog photography, end-of-summer film roll. The
+   background is a warm grey reminiscent of the back of an instant
+   photo (not cream like Sunset, not stone-cool like Marble). Surfaces
+   are slightly lighter, like the white border of a Polaroid frame.
+   The accent is a faded teal — the color of vintage photographs that
+   have shifted toward green over time. Distinctly nostalgic without
+   being twee. */
+:root[data-theme="polaroid"] {
+  --bg: #e8e2d6;
+  --bg-elev: #f0eadd;
+  --surface: #f5f0e4;
+  --surface-hover: #e8dfca;
+  --border: #cfc6b3;
+  --border-strong: #b3a890;
+  --text: #2a2620;
+  --text-muted: #6b6354;
+  --text-subtle: #968b76;
+  --accent: #3d6e6e;
+  --accent-hover: #2c5454;
+  --accent-text: #f5f0e4;
+  --shadow-sm: 0 1px 2px rgba(60, 50, 35, 0.07);
+  --shadow-md: 0 4px 12px rgba(60, 50, 35, 0.10);
+  --shadow-lg: 0 12px 32px rgba(60, 50, 35, 0.16);
 }
 
 * { box-sizing: border-box; }

@@ -50,6 +50,10 @@
       swatch: ['#ebe9e4', '#f4f3ef', '#c9c5bd', '#5a3f1f'] },
     { id: 'cobalt', name: 'Cobalt', tier: 'pro',
       swatch: ['#0a1628', '#0f1f3a', '#1f3358', '#f5d6a8'] },
+    { id: 'neon', name: 'Neon', tier: 'pro',
+      swatch: ['#04141a', '#072028', '#0d3a44', '#22f5e3'] },
+    { id: 'polaroid', name: 'Polaroid', tier: 'pro',
+      swatch: ['#e8e2d6', '#f5f0e4', '#cfc6b3', '#3d6e6e'] },
   ];
 
   /**
