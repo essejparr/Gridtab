@@ -48,6 +48,8 @@
       swatch: ['#0e0524', '#1a0e3d', '#2d1a5c', '#ff2e8a'] },
     { id: 'marble', name: 'Marble', tier: 'pro',
       swatch: ['#ebe9e4', '#f4f3ef', '#c9c5bd', '#5a3f1f'] },
+    { id: 'cobalt', name: 'Cobalt', tier: 'pro',
+      swatch: ['#0a1628', '#0f1f3a', '#1f3358', '#f5d6a8'] },
   ];
 
   /**

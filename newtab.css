@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -162,6 +162,31 @@
   --shadow-sm: 0 1px 2px rgba(40, 35, 25, 0.06);
   --shadow-md: 0 4px 12px rgba(40, 35, 25, 0.08);
   --shadow-lg: 0 12px 32px rgba(40, 35, 25, 0.14);
+}
+
+/* Cobalt (Pro) — deep night-sky blue with a warm cream accent. The
+   background is a saturated dark cobalt (not muddy navy, not generic
+   "dark blue") — clearly blue rather than just "a dark color with a
+   tint." Surfaces step up through deeper blue shades. The accent is
+   a soft peachy-cream that evokes warm lamp light against night sky
+   — distinct from Forest's saturated gold-on-green by being a softer,
+   more atmospheric warm tone. */
+:root[data-theme="cobalt"] {
+  --bg: #0a1628;
+  --bg-elev: #0f1f3a;
+  --surface: #142849;
+  --surface-hover: #1b3258;
+  --border: #1f3358;
+  --border-strong: #2d4778;
+  --text: #e8eef8;
+  --text-muted: #8da4c8;
+  --text-subtle: #5a7297;
+  --accent: #f5d6a8;
+  --accent-hover: #fae3bc;
+  --accent-text: #1a1a14;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 * { box-sizing: border-box; }
