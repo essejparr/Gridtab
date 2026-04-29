@@ -635,9 +635,6 @@
           for (const child of item.items || []) {
             grid.appendChild(buildTile(child, { folderId: item.id, folderColor: item.color }));
           }
-          // Drop slot — only when folder is open. Lets users drop tiles
-          // INTO the folder by dropping after the last child.
-          grid.appendChild(buildFolderDropSlot(item));
         }
       } else {
         grid.appendChild(buildTile(item));
@@ -648,9 +645,9 @@
   }
 
   /**
-   * Build a folder tile. Visually shows the folder's color as a tinted
-   * background plus a 2x2 mini-grid of the first four child favicons.
-   * Click toggles open/closed state.
+   * Build a folder tile. Solid color tile (or neutral surface for the
+   * default color), with a small folder icon centered. Click toggles
+   * open/closed; the hover tooltip surfaces the folder name + count.
    */
   function buildFolderTile(folder) {
     const tile = document.createElement('button');
@@ -662,7 +659,10 @@
     if (folder.open) tile.classList.add('is-open');
 
     const colorBg = folderColorBg(folder.color);
-    if (colorBg) tile.style.setProperty('--folder-color', colorBg);
+    if (colorBg) {
+      tile.style.setProperty('--folder-color', colorBg);
+      tile.classList.add('has-color');
+    }
 
     tile.setAttribute('aria-label',
       `Folder: ${folder.title} (${folder.items?.length || 0} items)`);
@@ -681,37 +681,17 @@
       openEditFolderModal(folder.id);
     });
 
-    // 2x2 mini-grid of child favicons. Empty cells stay blank.
-    const preview = document.createElement('div');
-    preview.className = 'folder-preview';
-    const previewItems = (folder.items || []).slice(0, 4);
-    for (let i = 0; i < 4; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'folder-preview-cell';
-      const child = previewItems[i];
-      if (child) {
-        const img = document.createElement('img');
-        img.alt = '';
-        img.referrerPolicy = 'no-referrer';
-        const sources = faviconSources(child);
-        let idx = 0;
-        img.src = sources[0];
-        img.onerror = () => {
-          idx += 1;
-          if (idx < sources.length) { img.src = sources[idx]; return; }
-          // All sources failed — show a tiny letter.
-          cell.innerHTML = '';
-          const letter = document.createElement('span');
-          letter.className = 'folder-preview-letter';
-          letter.textContent = (child.title || '?').charAt(0);
-          cell.appendChild(letter);
-        };
-        cell.appendChild(img);
-      }
-      preview.appendChild(cell);
-    }
+    // Centered folder glyph — a simple SVG that adapts color to context.
+    const glyph = document.createElement('div');
+    glyph.className = 'folder-glyph';
+    glyph.innerHTML =
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true">
+         <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+       </svg>`;
 
-    // Hover tooltip (folder name).
+    // Hover tooltip — folder name + item count (replaces the old preview).
     const tooltip = document.createElement('div');
     tooltip.className = 'tile-tooltip';
     tooltip.setAttribute('aria-hidden', 'true');
@@ -720,13 +700,14 @@
     tipTitle.textContent = folder.title;
     const tipMeta = document.createElement('div');
     tipMeta.className = 'tile-tooltip-domain';
-    tipMeta.textContent = `${folder.items?.length || 0} item${folder.items?.length === 1 ? '' : 's'}`;
+    const count = folder.items?.length || 0;
+    tipMeta.textContent = `${count} item${count === 1 ? '' : 's'}`;
     tooltip.appendChild(tipTitle);
     tooltip.appendChild(tipMeta);
 
     tile.appendChild(tooltip);
     tile.appendChild(editBtn);
-    tile.appendChild(preview);
+    tile.appendChild(glyph);
 
     // Click toggles open/closed (but not when clicking the edit button).
     tile.addEventListener('click', async (e) => {
@@ -738,45 +719,6 @@
     wireFolderTileDragHandlers(tile, folder);
 
     return tile;
-  }
-
-  /**
-   * Drop slot rendered after the last child of an open folder. It's
-   * sized like a tile but rendered as a dashed "drop here" placeholder.
-   * Dropping a favorite onto it adds that favorite to the folder.
-   */
-  function buildFolderDropSlot(folder) {
-    const slot = document.createElement('div');
-    slot.className = 'tile tile-folder-drop';
-    slot.dataset.folderId = folder.id;
-    const colorBg = folderColorBg(folder.color);
-    if (colorBg) slot.style.setProperty('--folder-color', colorBg);
-    const label = document.createElement('span');
-    label.className = 'tile-folder-drop-label';
-    label.textContent = 'Drop to add';
-    slot.appendChild(label);
-
-    slot.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      slot.classList.add('is-drop-target');
-    });
-    slot.addEventListener('dragleave', () => slot.classList.remove('is-drop-target'));
-    slot.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      slot.classList.remove('is-drop-target');
-      const draggedId = e.dataTransfer.getData('text/plain');
-      if (!draggedId) return;
-      const previous = JSON.parse(JSON.stringify(favorites));
-      const ok = addToFolder(draggedId, folder.id);
-      if (!ok) return;
-      const result = await saveFavorites(favorites);
-      if (!result.ok) { favorites = previous; }
-      render();
-    });
-
-    return slot;
   }
 
   /** Resolve a folder color id to its CSS background value (or null). */
@@ -918,9 +860,14 @@
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       if (tile.classList.contains('is-dragging')) return;
-      // Visual cue: center half of the tile = "merge into folder", outer
-      // half = "reorder before/after". We just toggle a class on the
-      // hovered tile so the user sees something meaningful.
+      // Tiles inside an open folder accept drops anywhere — no merge-zone
+      // gymnastics. Just show a single drop highlight.
+      if (ctx && ctx.folderId) {
+        tile.classList.add('is-drop-target');
+        return;
+      }
+      // Top-level tile: center half = "merge into folder", outer half =
+      // "reorder before/after".
       const rect = tile.getBoundingClientRect();
       const offsetX = e.clientX - rect.left;
       const inMergeZone = offsetX > rect.width * 0.25 && offsetX < rect.width * 0.75;
