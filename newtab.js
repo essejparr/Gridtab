@@ -44,8 +44,8 @@
       swatch: ['#1a2820', '#243831', '#3a544a', '#d4a857'] },
     { id: 'synthwave', name: 'Synthwave', tier: 'pro',
       swatch: ['#0e0524', '#1a0e3d', '#2d1a5c', '#ff2e8a'] },
-    { id: 'parchment', name: 'Parchment', tier: 'pro',
-      swatch: ['#efe6d2', '#f7f0de', '#d8c9a8', '#7a1f1f'] },
+    { id: 'marble', name: 'Marble', tier: 'pro',
+      swatch: ['#ebe9e4', '#f4f3ef', '#c9c5bd', '#5a3f1f'] },
   ];
 
   /**

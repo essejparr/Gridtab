@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="parchment"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -139,29 +139,29 @@
   --shadow-lg: 0 12px 36px rgba(120, 30, 200, 0.35);
 }
 
-/* Parchment (Pro) — aged paper, traditional and respectable. The
-   background is a warm cream with a slight yellow cast (think old
-   manuscript). Surfaces are a touch lighter than the page. The accent
-   is deep oxblood — the color of bound leather books and official
-   seals — which reads as serious and weighty without being decorative.
-   Text is ink-brown rather than pure black, with warm-grey borders
-   suggesting aged ruling lines. */
-:root[data-theme="parchment"] {
-  --bg: #efe6d2;
-  --bg-elev: #f3ecdb;
-  --surface: #f7f0de;
-  --surface-hover: #ede3c9;
-  --border: #d8c9a8;
-  --border-strong: #c0ad88;
-  --text: #2b2418;
-  --text-muted: #6b5f47;
-  --text-subtle: #9a8d72;
-  --accent: #7a1f1f;
-  --accent-hover: #5e1717;
-  --accent-text: #f7f0de;
-  --shadow-sm: 0 1px 2px rgba(75, 60, 30, 0.08);
-  --shadow-md: 0 4px 12px rgba(75, 60, 30, 0.10);
-  --shadow-lg: 0 12px 32px rgba(75, 60, 30, 0.16);
+/* Marble (Pro) — cool stone-white with a dark bronze accent. Reads as
+   classical, museum-like, architectural. The page background is a
+   subtle cool grey-white (not pure white) suggesting polished marble;
+   surfaces are slightly lighter, like raised relief carving. The
+   accent is a deep oiled bronze — restrained, weighty, and warm
+   enough to contrast the cool ground without feeling decorative.
+   Distinctly cool to differentiate from the warm Sunset theme. */
+:root[data-theme="marble"] {
+  --bg: #ebe9e4;
+  --bg-elev: #f0eee9;
+  --surface: #f4f3ef;
+  --surface-hover: #e6e3dd;
+  --border: #c9c5bd;
+  --border-strong: #a8a39a;
+  --text: #1f1f1d;
+  --text-muted: #5a564f;
+  --text-subtle: #8a8478;
+  --accent: #5a3f1f;
+  --accent-hover: #3f2c14;
+  --accent-text: #f4f3ef;
+  --shadow-sm: 0 1px 2px rgba(40, 35, 25, 0.06);
+  --shadow-md: 0 4px 12px rgba(40, 35, 25, 0.08);
+  --shadow-lg: 0 12px 32px rgba(40, 35, 25, 0.14);
 }
 
 * { box-sizing: border-box; }
