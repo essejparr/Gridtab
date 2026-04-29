@@ -634,8 +634,14 @@
       if (kindOf(item) === 'folder') {
         grid.appendChild(buildFolderTile(item));
         if (item.open) {
+          // Resolve the folder's color id to its actual hex value so
+          // children's --folder-color CSS variable receives a valid color.
+          const folderColorHex = folderColorBg(item.color);
           for (const child of item.items || []) {
-            grid.appendChild(buildTile(child, { folderId: item.id, folderColor: item.color }));
+            grid.appendChild(buildTile(child, {
+              folderId: item.id,
+              folderColor: folderColorHex,
+            }));
           }
         }
       } else {
@@ -683,16 +689,21 @@
       openEditFolderModal(folder.id);
     });
 
-    // Centered folder glyph. Same shape in open and closed states —
-    // the lighter background fill is the open-state signal.
+    // Centered folder glyph — closed or open variant. The open glyph is
+    // an angled isometric shape that suggests a drawer pulled open with
+    // contents visible inside.
     const glyph = document.createElement('div');
     glyph.className = 'folder-glyph';
-    glyph.innerHTML =
-      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
-            aria-hidden="true">
-         <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
-       </svg>`;
+    glyph.innerHTML = folder.open
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+           <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H3z"/>
+           <path d="M3 9h17l-2.4 8.5a2 2 0 0 1-1.93 1.5H7.33a2 2 0 0 1-1.93-1.5z"/>
+         </svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+           <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+         </svg>`;
 
     // Hover tooltip — folder name + item count (replaces the old preview).
     const tooltip = document.createElement('div');
