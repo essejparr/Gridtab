@@ -33,7 +33,9 @@
    */
   const THEMES = [
     { id: 'auto',   name: 'Auto',   tier: 'free',
-      swatch: ['#f4f5f7', '#ffffff', '#0f1115', '#1c2030'] },
+      // Auto doesn't have a single set of colors — it follows the OS.
+      // Show the light-mode preview as a reasonable representation.
+      swatch: ['#f4f5f7', '#ffffff', '#e5e7eb', '#2563eb'] },
     { id: 'light',  name: 'Light',  tier: 'free',
       swatch: ['#f4f5f7', '#ffffff', '#e5e7eb', '#2563eb'] },
     { id: 'dark',   name: 'Dark',   tier: 'free',
@@ -344,13 +346,33 @@
       const locked = theme.tier === 'pro' && !isThemeAvailable(theme.id, settings);
       if (locked) card.classList.add('is-locked');
 
+      // Mini theme preview: page bg fills the rectangle, an inner
+      // "surface tile" represents one of the favorite tiles, and a dot
+      // in the corner shows the accent color. Reads as "what does this
+      // theme actually look like?" rather than "here are 4 colors."
+      // swatch[0] = bg, swatch[1] = surface, swatch[2] = border, swatch[3] = accent
       const swatch = document.createElement('div');
       swatch.className = 'theme-card-swatch';
-      for (const color of theme.swatch) {
-        const cell = document.createElement('span');
-        cell.style.background = color;
-        swatch.appendChild(cell);
+      // Auto theme: split diagonally between light and dark previews so
+      // it's distinguishable from the Light theme card.
+      if (theme.id === 'auto') {
+        swatch.style.background =
+          'linear-gradient(135deg, #f4f5f7 50%, #0f1115 50%)';
+      } else {
+        swatch.style.background = theme.swatch[0];
       }
+
+      const surface = document.createElement('span');
+      surface.className = 'theme-card-swatch-surface';
+      surface.style.background = theme.swatch[1];
+      surface.style.borderColor = theme.swatch[2];
+
+      const accent = document.createElement('span');
+      accent.className = 'theme-card-swatch-accent';
+      accent.style.background = theme.swatch[3];
+
+      swatch.appendChild(surface);
+      swatch.appendChild(accent);
 
       const name = document.createElement('div');
       name.className = 'theme-card-name';
