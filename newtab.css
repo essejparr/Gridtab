@@ -506,13 +506,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 /* Theme card thumbnail — a miniature "what does this theme look like?"
    preview. The outer box shows the page bg color; the inner square is
-   a sample tile surface; the small dot is the accent (Add button,
-   focus rings, etc.). More honest than a 2x2 swatch grid since the
-   proportions roughly match what the user actually sees. */
+   a sample tile surface; the bar at the bottom is the accent (Add
+   button, focus rings, etc.). The accent is rendered as a thicker
+   horizontal bar rather than a tiny dot so it actually reads at this
+   small size. */
 .theme-card-swatch {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   flex-shrink: 0;
   border: 1px solid var(--border);
@@ -520,21 +521,21 @@ button { font-family: inherit; cursor: pointer; }
 }
 .theme-card-swatch-surface {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 14px;
-  height: 14px;
+  top: 5px;
+  left: 5px;
+  width: 16px;
+  height: 16px;
   border-radius: 3px;
   border: 1px solid;
   display: block;
 }
 .theme-card-swatch-accent {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  bottom: 4px;
+  right: 4px;
+  width: 14px;
+  height: 6px;
+  border-radius: 2px;
   display: block;
 }
 .theme-card-name {
