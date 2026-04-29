@@ -632,15 +632,9 @@
       if (kindOf(item) === 'folder') {
         grid.appendChild(buildFolderTile(item));
         if (item.open) {
-          const children = item.items || [];
-          children.forEach((child, idx) => {
-            const tile = buildTile(child, { folderId: item.id, folderColor: item.color });
-            // Mark first/last so CSS can suppress the rail extension on
-            // the outer edges where there's no sibling to connect to.
-            if (idx === 0) tile.classList.add('is-folder-first-child');
-            if (idx === children.length - 1) tile.classList.add('is-folder-last-child');
-            grid.appendChild(tile);
-          });
+          for (const child of item.items || []) {
+            grid.appendChild(buildTile(child, { folderId: item.id, folderColor: item.color }));
+          }
         }
       } else {
         grid.appendChild(buildTile(item));
