@@ -632,9 +632,15 @@
       if (kindOf(item) === 'folder') {
         grid.appendChild(buildFolderTile(item));
         if (item.open) {
-          for (const child of item.items || []) {
-            grid.appendChild(buildTile(child, { folderId: item.id, folderColor: item.color }));
-          }
+          const children = item.items || [];
+          children.forEach((child, idx) => {
+            const tile = buildTile(child, { folderId: item.id, folderColor: item.color });
+            // Mark first/last so CSS can suppress the rail extension on
+            // the outer edges where there's no sibling to connect to.
+            if (idx === 0) tile.classList.add('is-folder-first-child');
+            if (idx === children.length - 1) tile.classList.add('is-folder-last-child');
+            grid.appendChild(tile);
+          });
         }
       } else {
         grid.appendChild(buildTile(item));
@@ -914,8 +920,9 @@
             mutated = true;
           }
         } else {
-          // Move dragged from wherever it was into this folder.
-          mutated = addToFolder(draggedId, ctx.folderId);
+          // Move dragged from wherever it was into this folder, slotted
+          // in at the position of the tile it was dropped onto.
+          mutated = addToFolder(draggedId, ctx.folderId, targetId);
         }
       }
       // Case B: this tile is at the top level. Folder vs. reorder by zone.
@@ -1577,14 +1584,25 @@
     return true;
   }
 
-  /** Move a favorite into an existing folder. */
-  function addToFolder(itemId, folderId) {
+  /**
+   * Move a favorite into an existing folder. If `beforeId` is provided
+   * (the id of an existing child), the moved item is inserted before
+   * that child; otherwise it's appended to the end.
+   */
+  function addToFolder(itemId, folderId, beforeId) {
     const folder = favorites.find((f) => f.id === folderId);
     if (!folder || kindOf(folder) !== 'folder') return false;
     if (itemId === folderId) return false;
     const item = removeItemById(itemId);
     if (!item || kindOf(item) !== 'favorite') return false;
     folder.items = folder.items || [];
+    if (beforeId) {
+      const idx = folder.items.findIndex((c) => c.id === beforeId);
+      if (idx !== -1) {
+        folder.items.splice(idx, 0, item);
+        return true;
+      }
+    }
     folder.items.push(item);
     return true;
   }

@@ -763,34 +763,60 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
 }
 
 /* Children of an open folder use horizontal "rails" — top and bottom
-   borders in the folder color — instead of a full ring on each tile.
-   Adjacent children visually connect into one continuous rail above
-   and below, reading as "drawer contents" rather than "each tile is
-   in a folder". */
+   strips in the folder color — that extend past each tile's bounds
+   into the grid gap, so adjacent children join into one continuous
+   rail. Implemented as pseudo-elements positioned outside the tile's
+   own box (negative left/right) so they bridge the gap without
+   affecting layout. */
 .tile.is-folder-child {
   --folder-color: var(--accent);
-  border-top: 1.5px solid var(--folder-color);
-  border-bottom: 1.5px solid var(--folder-color);
-  border-left-color: transparent;
-  border-right-color: transparent;
-  /* Pull in slightly so the rails align with the folder tile's bottom
-     connector. Negative margin keeps the grid math clean. */
-  border-radius: var(--radius-md);
+  /* Remove the actual tile borders we used in the previous iteration —
+     rails are drawn separately as pseudo-elements. */
 }
-.tile.is-folder-child:hover {
-  /* Keep the rails on hover; the elevation comes from the lift + shadow
-     defined on the base .tile. */
-  border-top-color: var(--folder-color);
-  border-bottom-color: var(--folder-color);
+.tile.is-folder-child::before,
+.tile.is-folder-child::after {
+  content: "";
+  position: absolute;
+  /* Half the grid gap on each side so adjacent children's rails meet
+     in the middle of the gap. */
+  left: calc(var(--grid-gap) / -2);
+  right: calc(var(--grid-gap) / -2);
+  height: 1.5px;
+  background: var(--folder-color);
+  pointer-events: none;
+  z-index: 2;
 }
+.tile.is-folder-child::before { top: 0; }
+.tile.is-folder-child::after  { bottom: 0; }
+
+/* The first child has no sibling on its left (or it's the first of a
+   wrapped row) — suppress the leftward extension. The folder header
+   tile's bottom rail extends rightward to meet this. */
+.tile.is-folder-first-child::before,
+.tile.is-folder-first-child::after { left: 0; }
+
+/* The last child has no sibling on its right — suppress the rightward
+   extension so the rail doesn't bleed into a non-folder tile. */
+.tile.is-folder-last-child::before,
+.tile.is-folder-last-child::after { right: 0; }
 
 /* The folder tile, when open, gets a thicker bottom edge in its own
-   color so it visually "hands off" to the rails below. */
+   color that extends rightward into the gap to meet the first child's
+   top rail. */
 .tile-folder.is-open {
-  /* Drop the outer outline-style highlight; replaced by the bottom
-     connector approach. */
   outline: none;
-  border-bottom: 3px solid var(--folder-color, var(--accent));
+  position: relative;
+}
+.tile-folder.is-open::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: calc(var(--grid-gap) / -2);
+  bottom: -1.5px;
+  height: 3px;
+  background: var(--folder-color, var(--accent));
+  z-index: 2;
+  pointer-events: none;
 }
 
 /* Drop-target highlight for tiles in "merge zone" — center half of a
