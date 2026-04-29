@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -113,6 +113,30 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.30);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.40);
+}
+
+/* Synthwave (Pro) — 80s retrofuture. Deep midnight indigo background
+   with a vivid magenta accent. Borders carry a cool blue-violet tint
+   that gives the chrome a faint neon-edge feel. Distinctly playful
+   and high-energy compared to the other restrained themes. */
+:root[data-theme="synthwave"] {
+  --bg: #0e0524;
+  --bg-elev: #1a0e3d;
+  --surface: #211549;
+  --surface-hover: #2a1c5a;
+  --border: #3d2978;
+  --border-strong: #5538a8;
+  --text: #f4eaff;
+  --text-muted: #a99cc7;
+  --text-subtle: #7a6f9d;
+  --accent: #ff2e8a;
+  --accent-hover: #ff5ba3;
+  --accent-text: #ffffff;
+  /* Shadows lean magenta/violet so they read as ambient neon glow
+     rather than ordinary drop shadows. */
+  --shadow-sm: 0 1px 2px rgba(255, 46, 138, 0.15);
+  --shadow-md: 0 4px 16px rgba(255, 46, 138, 0.18);
+  --shadow-lg: 0 12px 36px rgba(120, 30, 200, 0.35);
 }
 
 * { box-sizing: border-box; }
@@ -767,10 +791,25 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
 .tile-folder.has-color.is-open {
   background: color-mix(in srgb, var(--folder-color) 55%, var(--surface) 45%);
 }
-/* The default (no color) folder gets a subtle accent tint when open
-   so it still feels distinct from its closed state. */
+/* Default (no-color) folder gets a subtle accent tint so it reads as
+   intentional rather than missing-data. The tint adapts automatically
+   per theme via --accent. */
+.tile-folder:not(.has-color) {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface) 88%);
+  border-color: color-mix(in srgb, var(--accent) 25%, var(--border) 75%);
+}
+.tile-folder:not(.has-color):hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface) 82%);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border) 60%);
+}
+.tile-folder:not(.has-color) .folder-glyph {
+  color: var(--accent);
+  opacity: 0.85;
+}
+/* Default folder open state: slightly more accent so the open signal
+   is visible even without a strong fill color. */
 .tile-folder:not(.has-color).is-open {
-  background: var(--surface-hover);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface) 78%);
 }
 
 .tile-folder.is-open {
@@ -810,8 +849,11 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   color: rgba(0, 0, 0, 0.55);
 }
 .folder-glyph svg {
-  width: 40%;
-  height: 40%;
+  width: 48%;
+  height: 48%;
+}
+.folder-glyph svg path {
+  stroke-width: 1.8;
 }
 
 /* Children of an open folder get a colored outline ring so users can
