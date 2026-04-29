@@ -731,12 +731,12 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   filter: brightness(1.06);
 }
 
-/* Open-state fill: a lighter, drained version of the folder color so
-   the open folder reads as "the drawer is pulled out". 30/70 mix
-   toward the page surface keeps it on-brand but clearly desaturated.
-   Falls back gracefully on browsers without color-mix. */
+/* Open-state fill: a lighter version of the folder color so the open
+   folder reads as "drawer pulled out". 55/45 mix toward the page
+   surface keeps enough brand color that the folder doesn't look
+   disabled — just visibly lighter than its closed state. */
 .tile-folder.has-color.is-open {
-  background: color-mix(in srgb, var(--folder-color) 30%, var(--surface) 70%);
+  background: color-mix(in srgb, var(--folder-color) 55%, var(--surface) 45%);
 }
 /* The default (no color) folder gets a subtle accent tint when open
    so it still feels distinct from its closed state. */
@@ -765,12 +765,10 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
      as a faint marker without competing with the color identity. */
   color: rgba(255, 255, 255, 0.85);
 }
-/* When open the fill is desaturated, so a near-white glyph would wash
-   out. Use the folder color itself for the glyph — it'll read clearly
-   against the pale background without competing with siblings' rings. */
+/* When open the fill is lighter, so the glyph needs slightly more
+   opacity to stay readable against the desaturated background. */
 .tile-folder.has-color.is-open .folder-glyph {
-  color: var(--folder-color);
-  opacity: 0.7;
+  color: rgba(255, 255, 255, 0.95);
 }
 /* White folder is a special case: glyph stays dark so it remains
    readable, and we add a subtle border so the tile doesn't disappear
