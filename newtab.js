@@ -63,6 +63,7 @@
    */
   const BUTTON_COLORS = [
     { id: 'default', name: 'Theme',  bg: null,       hover: null      },
+    // Saturated row — works well on dark themes and as bold accents.
     { id: 'blue',    name: 'Blue',   bg: '#2563eb',  hover: '#1d4ed8' },
     { id: 'black',   name: 'Black',  bg: '#111111',  hover: '#000000' },
     { id: 'red',     name: 'Red',    bg: '#dc2626',  hover: '#b91c1c' },
@@ -71,6 +72,14 @@
     { id: 'purple',  name: 'Purple', bg: '#7c3aed',  hover: '#6d28d9' },
     { id: 'teal',    name: 'Teal',   bg: '#0d9488',  hover: '#0f766e' },
     { id: 'white',   name: 'White',  bg: '#ffffff',  hover: '#f3f4f6' },
+    // Light row — gentler tones that read better against light themes
+    // (Sunset, Marble, Polaroid) without competing for attention.
+    { id: 'lightBlue',  name: 'Light Blue',  bg: '#93c5fd', hover: '#7eb6fc' },
+    { id: 'lightRed',   name: 'Light Red',   bg: '#fca5a5', hover: '#f99090' },
+    { id: 'lightGreen', name: 'Light Green', bg: '#86efac', hover: '#6fe89a' },
+    { id: 'lightYellow',name: 'Light Yellow',bg: '#fde68a', hover: '#fcdb6c' },
+    { id: 'lightPink',  name: 'Light Pink',  bg: '#f9a8d4', hover: '#f693c5' },
+    { id: 'lightPurple',name: 'Light Purple',bg: '#c4b5fd', hover: '#b3a0fc' },
   ];
 
   /**
@@ -170,6 +179,8 @@
   const settingsBtn    = document.getElementById('settingsBtn');
   const settingsModal  = document.getElementById('settingsModal');
   const resetBtn       = document.getElementById('resetSettingsBtn');
+  const expandAllBtn   = document.getElementById('expandAllBtn');
+  const collapseAllBtn = document.getElementById('collapseAllBtn');
   // Split add button + color picker.
   const addBtnWrap     = document.querySelector('.add-btn-wrap');
   const addBtnCaret    = document.getElementById('addBtnCaret');
@@ -1799,6 +1810,29 @@
     applySettings(settings);
     await saveSettings(settings);
   });
+
+  /**
+   * Toggle every folder's open state in one batch. Useful when the
+   * user has many folders and wants to either survey everything at
+   * once or quickly tidy the dashboard.
+   */
+  async function setAllFoldersOpen(open) {
+    const previous = JSON.parse(JSON.stringify(favorites));
+    let mutated = false;
+    for (const item of favorites) {
+      if (kindOf(item) === 'folder' && item.open !== open) {
+        item.open = open;
+        mutated = true;
+      }
+    }
+    if (!mutated) return;
+    const result = await saveFavorites(favorites);
+    if (!result.ok) { favorites = previous; return; }
+    render();
+  }
+
+  expandAllBtn.addEventListener('click', () => setAllFoldersOpen(true));
+  collapseAllBtn.addEventListener('click', () => setAllFoldersOpen(false));
 
   settingsBtn.addEventListener('click', openSettingsModal);
 

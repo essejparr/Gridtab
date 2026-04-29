@@ -933,23 +933,28 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
 }
 /* Default (no-color) folder gets a subtle accent tint so it reads as
    intentional rather than missing-data. The tint adapts automatically
-   per theme via --accent. */
+   per theme via --accent. Closed and open states follow the same
+   lighter-on-open logic as colored folders — the open state is more
+   drained, not more saturated. */
 .tile-folder:not(.has-color) {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface) 88%);
-  border-color: color-mix(in srgb, var(--accent) 25%, var(--border) 75%);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface) 78%);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border) 65%);
 }
 .tile-folder:not(.has-color):hover {
-  background: color-mix(in srgb, var(--accent) 18%, var(--surface) 82%);
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border) 60%);
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface) 72%);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border) 50%);
 }
 .tile-folder:not(.has-color) .folder-glyph {
   color: var(--accent);
-  opacity: 0.85;
+  opacity: 0.9;
 }
-/* Default folder open state: slightly more accent so the open signal
-   is visible even without a strong fill color. */
+/* Default folder open state: clearly lighter than closed, matching
+   the drained-drawer metaphor used by colored folders. */
 .tile-folder:not(.has-color).is-open {
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface) 78%);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface) 92%);
+}
+.tile-folder:not(.has-color).is-open .folder-glyph {
+  opacity: 0.65;
 }
 
 .tile-folder.is-open {
@@ -1204,6 +1209,16 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
 .btn-sm {
   padding: 6px 10px;
   font-size: 12px;
+}
+
+/* Folder action row in settings modal — side-by-side ghost buttons. */
+.folder-actions {
+  display: flex;
+  gap: 8px;
+}
+.folder-actions .btn-sm {
+  flex: 1;
+  justify-content: center;
 }
 
 .modal-actions {
