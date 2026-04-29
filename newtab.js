@@ -1323,12 +1323,35 @@
     const folder = favorites.find((f) => f.id === editingId);
     if (!folder) return;
     const itemCount = folder.items?.length || 0;
-    const message = itemCount > 0
-      ? `Delete "${folder.title}" and its ${itemCount} item${itemCount === 1 ? '' : 's'}?`
-      : `Delete "${folder.title}"?`;
-    if (!confirm(message)) return;
+
+    // Empty folder — straightforward confirm.
+    if (itemCount === 0) {
+      if (!confirm(`Delete "${folder.title}"?`)) return;
+      await applyFolderDelete(folder.id, /*releaseItems=*/false);
+      return;
+    }
+
+    // Non-empty folder — three options. We use a custom prompt-like
+    // dialog because confirm() only supports two buttons.
+    showFolderDeleteDialog(folder);
+  });
+
+  /**
+   * Apply a folder delete to the data model. If `releaseItems` is true,
+   * the folder's children are moved to the top level at the folder's
+   * position before the folder is removed, preserving order.
+   */
+  async function applyFolderDelete(folderId, releaseItems) {
     const previous = JSON.parse(JSON.stringify(favorites));
-    favorites = favorites.filter((f) => f.id !== editingId);
+    const idx = favorites.findIndex((f) => f.id === folderId);
+    if (idx === -1) return;
+    const folder = favorites[idx];
+    if (releaseItems && folder.items?.length) {
+      // Replace the folder with its children, in order.
+      favorites.splice(idx, 1, ...folder.items);
+    } else {
+      favorites.splice(idx, 1);
+    }
     const result = await saveFavorites(favorites);
     if (!result.ok) {
       favorites = previous;
@@ -1337,7 +1360,77 @@
     }
     render();
     closeModal();
-  });
+  }
+
+  /**
+   * Build and show the folder-delete dialog inline. Three buttons:
+   * Cancel, Release contents (move children up, delete folder),
+   * Delete with contents (remove everything).
+   */
+  function showFolderDeleteDialog(folder) {
+    // Single inline implementation — created on demand so we don't carry
+    // empty markup around when it's not in use.
+    const overlay = document.createElement('div');
+    overlay.className = 'modal';
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.innerHTML = `
+      <div class="modal-backdrop" data-cancel></div>
+      <div class="modal-card" role="dialog" aria-modal="true" style="max-width: 380px;">
+        <h2 class="modal-title">Delete folder?</h2>
+        <p style="margin: -8px 0 16px; color: var(--text-muted); font-size: 14px;">
+          “${escapeHtml(folder.title)}” contains
+          ${folder.items.length} item${folder.items.length === 1 ? '' : 's'}.
+          What would you like to do with them?
+        </p>
+        <div class="modal-actions" style="flex-direction: column; gap: 8px; align-items: stretch;">
+          <button type="button" class="btn btn-ghost" data-action="release"
+                  style="justify-content: center;">
+            Release contents to grid
+          </button>
+          <button type="button" class="btn btn-danger" data-action="delete-all"
+                  style="justify-content: center;">
+            Delete folder and contents
+          </button>
+          <button type="button" class="btn btn-ghost" data-cancel
+                  style="justify-content: center;">
+            Cancel
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', async (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.matches('[data-cancel]')) {
+        close();
+      } else if (t.dataset.action === 'release') {
+        close();
+        await applyFolderDelete(folder.id, /*releaseItems=*/true);
+      } else if (t.dataset.action === 'delete-all') {
+        close();
+        await applyFolderDelete(folder.id, /*releaseItems=*/false);
+      }
+    });
+
+    // Esc closes the dialog (overrides the main Esc handler since this
+    // dialog is appended last in the DOM).
+    const onEsc = (e) => {
+      if (e.key === 'Escape') {
+        close();
+        document.removeEventListener('keydown', onEsc);
+      }
+    };
+    document.addEventListener('keydown', onEsc);
+  }
+
+  /** Tiny HTML escape for the folder title in the inline dialog. */
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();

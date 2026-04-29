@@ -730,10 +730,6 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
      transform is the only other change. */
   filter: brightness(1.06);
 }
-.tile-folder.is-open {
-  outline: 2px solid var(--folder-color, var(--accent));
-  outline-offset: 2px;
-}
 
 /* Centered folder glyph. Color adapts: dark on light bgs, light on
    dark bgs. We use currentColor in the SVG and set color here. */
@@ -766,24 +762,35 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   height: 40%;
 }
 
-/* Children of an open folder get a colored outline ring so users can
-   see at a glance which tiles belong to which folder. */
+/* Children of an open folder use horizontal "rails" — top and bottom
+   borders in the folder color — instead of a full ring on each tile.
+   Adjacent children visually connect into one continuous rail above
+   and below, reading as "drawer contents" rather than "each tile is
+   in a folder". */
 .tile.is-folder-child {
-  --folder-color: transparent;
-  box-shadow:
-    0 0 0 2px var(--folder-color, transparent),
-    var(--shadow-sm);
+  --folder-color: var(--accent);
+  border-top: 1.5px solid var(--folder-color);
+  border-bottom: 1.5px solid var(--folder-color);
+  border-left-color: transparent;
+  border-right-color: transparent;
+  /* Pull in slightly so the rails align with the folder tile's bottom
+     connector. Negative margin keeps the grid math clean. */
+  border-radius: var(--radius-md);
 }
 .tile.is-folder-child:hover {
-  box-shadow:
-    0 0 0 2px var(--folder-color, transparent),
-    var(--shadow-lg);
+  /* Keep the rails on hover; the elevation comes from the lift + shadow
+     defined on the base .tile. */
+  border-top-color: var(--folder-color);
+  border-bottom-color: var(--folder-color);
 }
-/* When the folder color is "default" (no override), show a soft accent
-   ring so children are still visually grouped even without a color. */
-.tile.is-folder-child[style*="--folder-color: transparent"],
-.tile.is-folder-child:not([style*="--folder-color"]) {
-  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+
+/* The folder tile, when open, gets a thicker bottom edge in its own
+   color so it visually "hands off" to the rails below. */
+.tile-folder.is-open {
+  /* Drop the outer outline-style highlight; replaced by the bottom
+     connector approach. */
+  outline: none;
+  border-bottom: 3px solid var(--folder-color, var(--accent));
 }
 
 /* Drop-target highlight for tiles in "merge zone" — center half of a
