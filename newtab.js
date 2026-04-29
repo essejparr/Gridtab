@@ -44,6 +44,8 @@
       swatch: ['#1a2820', '#243831', '#3a544a', '#d4a857'] },
     { id: 'synthwave', name: 'Synthwave', tier: 'pro',
       swatch: ['#0e0524', '#1a0e3d', '#2d1a5c', '#ff2e8a'] },
+    { id: 'parchment', name: 'Parchment', tier: 'pro',
+      swatch: ['#efe6d2', '#f7f0de', '#d8c9a8', '#7a1f1f'] },
   ];
 
   /**
@@ -697,8 +699,8 @@
     glyph.innerHTML = folder.open
       ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-           <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H3z"/>
-           <path d="M3 9h17l-2.4 8.5a2 2 0 0 1-1.93 1.5H7.33a2 2 0 0 1-1.93-1.5z"/>
+           <path d="M2 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2H2z"/>
+           <path d="M2 10h20l-2.5 8a2 2 0 0 1-1.94 1.5H6.44a2 2 0 0 1-1.94-1.5z"/>
          </svg>`
       : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

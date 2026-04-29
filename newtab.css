@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="parchment"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -137,6 +137,31 @@
   --shadow-sm: 0 1px 2px rgba(255, 46, 138, 0.15);
   --shadow-md: 0 4px 16px rgba(255, 46, 138, 0.18);
   --shadow-lg: 0 12px 36px rgba(120, 30, 200, 0.35);
+}
+
+/* Parchment (Pro) — aged paper, traditional and respectable. The
+   background is a warm cream with a slight yellow cast (think old
+   manuscript). Surfaces are a touch lighter than the page. The accent
+   is deep oxblood — the color of bound leather books and official
+   seals — which reads as serious and weighty without being decorative.
+   Text is ink-brown rather than pure black, with warm-grey borders
+   suggesting aged ruling lines. */
+:root[data-theme="parchment"] {
+  --bg: #efe6d2;
+  --bg-elev: #f3ecdb;
+  --surface: #f7f0de;
+  --surface-hover: #ede3c9;
+  --border: #d8c9a8;
+  --border-strong: #c0ad88;
+  --text: #2b2418;
+  --text-muted: #6b5f47;
+  --text-subtle: #9a8d72;
+  --accent: #7a1f1f;
+  --accent-hover: #5e1717;
+  --accent-text: #f7f0de;
+  --shadow-sm: 0 1px 2px rgba(75, 60, 30, 0.08);
+  --shadow-md: 0 4px 12px rgba(75, 60, 30, 0.10);
+  --shadow-lg: 0 12px 32px rgba(75, 60, 30, 0.16);
 }
 
 * { box-sizing: border-box; }
