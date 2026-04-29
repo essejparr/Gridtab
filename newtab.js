@@ -681,15 +681,22 @@
       openEditFolderModal(folder.id);
     });
 
-    // Centered folder glyph — a simple SVG that adapts color to context.
+    // Centered folder glyph — closed or open variant depending on state.
+    // Uses currentColor so it adapts to the tile's text color.
     const glyph = document.createElement('div');
     glyph.className = 'folder-glyph';
-    glyph.innerHTML =
-      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
-            aria-hidden="true">
-         <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
-       </svg>`;
+    glyph.innerHTML = folder.open
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+           <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H3V7z"/>
+           <path d="M3 9h18l-2.5 9a2 2 0 0 1-1.95 1.5H7.45a2 2 0 0 1-1.95-1.5L3 9z"/>
+         </svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+           <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+         </svg>`;
 
     // Hover tooltip — folder name + item count (replaces the old preview).
     const tooltip = document.createElement('div');

@@ -731,6 +731,24 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   filter: brightness(1.06);
 }
 
+/* Open-state fill: a lighter, drained version of the folder color so
+   the open folder reads as "the drawer is pulled out". 30/70 mix
+   toward the page surface keeps it on-brand but clearly desaturated.
+   Falls back gracefully on browsers without color-mix. */
+.tile-folder.has-color.is-open {
+  background: color-mix(in srgb, var(--folder-color) 30%, var(--surface) 70%);
+}
+/* The default (no color) folder gets a subtle accent tint when open
+   so it still feels distinct from its closed state. */
+.tile-folder:not(.has-color).is-open {
+  background: var(--surface-hover);
+}
+
+.tile-folder.is-open {
+  outline: 2px solid var(--folder-color, var(--accent));
+  outline-offset: 0;
+}
+
 /* Centered folder glyph. Color adapts: dark on light bgs, light on
    dark bgs. We use currentColor in the SVG and set color here. */
 .folder-glyph {
@@ -746,6 +764,13 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
   /* On a colored fill, the glyph is white at low opacity so it reads
      as a faint marker without competing with the color identity. */
   color: rgba(255, 255, 255, 0.85);
+}
+/* When open the fill is desaturated, so a near-white glyph would wash
+   out. Use the folder color itself for the glyph — it'll read clearly
+   against the pale background without competing with siblings' rings. */
+.tile-folder.has-color.is-open .folder-glyph {
+  color: var(--folder-color);
+  opacity: 0.7;
 }
 /* White folder is a special case: glyph stays dark so it remains
    readable, and we add a subtle border so the tile doesn't disappear
@@ -771,13 +796,6 @@ body.is-dragging .tile-tooltip { opacity: 0 !important; }
 }
 .tile.is-folder-child:hover {
   box-shadow: 0 0 0 2px var(--folder-color), var(--shadow-lg);
-}
-
-/* The folder tile, when open, gets the same colored outline so it
-   visually pairs with its children. */
-.tile-folder.is-open {
-  outline: 2px solid var(--folder-color, var(--accent));
-  outline-offset: 0;
 }
 
 /* Drop-target highlight for tiles in "merge zone" — center half of a
