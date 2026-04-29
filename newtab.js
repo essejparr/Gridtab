@@ -296,6 +296,18 @@
       btn.setAttribute('aria-checked', active ? 'true' : 'false');
     });
 
+    // Caret button tooltip: surfaces the override state so users can
+    // notice at a glance when their button color isn't following the
+    // theme — no need to open the picker to find out.
+    if (addBtnCaret) {
+      const currentColor = BUTTON_COLORS.find((c) => c.id === s.accentColor);
+      if (currentColor) {
+        addBtnCaret.title = currentColor.id === 'default'
+          ? 'Button color: following theme'
+          : `Button color: ${currentColor.name} (custom)`;
+      }
+    }
+
     // Re-render dynamic pickers so their checked state matches.
     renderThemePicker();
     renderColorMenu();
@@ -393,22 +405,46 @@
   function renderColorMenu() {
     if (!colorMenuGrid) return;
     colorMenuGrid.innerHTML = '';
+
+    // Find the current theme's accent so the 'default' swatch can
+    // literally show what color the button will become if the user
+    // picks 'Theme'. This makes override-vs-follow immediate.
+    const currentTheme = THEMES.find((t) => t.id === settings.theme) || THEMES[0];
+    const themeAccent = currentTheme.swatch[3];
+
     for (const color of BUTTON_COLORS) {
       const swatch = document.createElement('button');
       swatch.type = 'button';
       swatch.className = 'color-swatch';
-      swatch.title = color.name;
+      swatch.title = color.id === 'default'
+        ? `Theme accent (${currentTheme.name})`
+        : color.name;
       swatch.setAttribute('role', 'menuitemradio');
-      swatch.setAttribute('aria-checked', settings.accentColor === color.id ? 'true' : 'false');
-      // 'default' uses a subtle gradient to indicate "follow theme".
+      swatch.setAttribute('aria-checked',
+        settings.accentColor === color.id ? 'true' : 'false');
       if (color.id === 'default') {
-        swatch.style.background =
-          'conic-gradient(from 180deg, #2563eb, #16a34a, #f59e0b, #dc2626, #2563eb)';
+        // Show the current theme's accent so 'Theme' is self-explanatory.
+        // A small white dot is overlaid via CSS to mark it as the
+        // 'follow theme' option distinct from a literal color choice.
+        swatch.style.background = themeAccent;
+        swatch.classList.add('color-swatch-theme');
       } else {
         swatch.style.background = color.bg;
       }
       swatch.addEventListener('click', () => handleColorSelect(color.id));
       colorMenuGrid.appendChild(swatch);
+    }
+
+    // Header label: tells the user what's currently selected at a glance,
+    // and surfaces the "you've overridden the theme" state explicitly.
+    const currentColor = BUTTON_COLORS.find((c) => c.id === settings.accentColor);
+    const label = document.querySelector('.color-menu-label');
+    if (label && currentColor) {
+      if (currentColor.id === 'default') {
+        label.textContent = `Following theme (${currentTheme.name})`;
+      } else {
+        label.textContent = `Custom: ${currentColor.name}`;
+      }
     }
   }
 
