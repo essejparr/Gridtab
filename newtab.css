@@ -525,12 +525,41 @@ button { font-family: inherit; cursor: pointer; }
   transform: scale(0.96);
 }
 
-/* The tile currently under the cursor — gets a soft highlight ring so the
-   drop target is obvious without disrupting the grid layout. */
+/* The tile currently under the cursor (inside an open folder) — soft
+   highlight ring. Top-level reorder uses the side insertion bars
+   below instead. */
 .tile.is-drop-target {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), var(--shadow-md);
   transform: translateY(-2px);
+}
+
+/* Reorder insertion indicator: a thick vertical bar on the side of
+   the target tile where the dragged item will land. Drawn as a
+   pseudo-element extending into the grid gap so it sits between
+   tiles, not on top of them. */
+.tile.is-drop-before,
+.tile.is-drop-after {
+  /* Subtle elevation so it's clear which tile is being targeted. */
+  transform: translateY(-2px);
+}
+.tile.is-drop-before::before,
+.tile.is-drop-after::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 3;
+}
+.tile.is-drop-before::before {
+  left: calc(var(--grid-gap) / -2 - 1.5px);
+}
+.tile.is-drop-after::after {
+  right: calc(var(--grid-gap) / -2 - 1.5px);
 }
 
 /* While any drag is in progress, suppress the hover tooltip globally —

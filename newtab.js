@@ -853,38 +853,89 @@
     tile.addEventListener('dragend', () => {
       tile.classList.remove('is-dragging');
       document.body.classList.remove('is-dragging');
-      document.querySelectorAll('.tile.is-drop-target, .tile.is-merge-target')
-        .forEach((el) => el.classList.remove('is-drop-target', 'is-merge-target'));
+      document.querySelectorAll('.tile.is-drop-target, .tile.is-merge-target, .tile.is-drop-before, .tile.is-drop-after')
+        .forEach((el) => el.classList.remove(
+          'is-drop-target', 'is-merge-target', 'is-drop-before', 'is-drop-after'));
     });
+
+    // Hold-to-merge state, scoped to this tile. The merge highlight
+    // only appears after the user *pauses* in the center zone for the
+    // hold duration — accidental cursor passes during reordering won't
+    // trigger merge.
+    let mergeHoldTimer = null;
+    const MERGE_HOLD_MS = 400;
+
+    function clearMergeHold() {
+      if (mergeHoldTimer) {
+        clearTimeout(mergeHoldTimer);
+        mergeHoldTimer = null;
+      }
+    }
 
     tile.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       if (tile.classList.contains('is-dragging')) return;
-      // Tiles inside an open folder accept drops anywhere — no merge-zone
+
+      // Tiles inside an open folder accept drops anywhere — no merge
       // gymnastics. Just show a single drop highlight.
       if (ctx && ctx.folderId) {
         tile.classList.add('is-drop-target');
         return;
       }
-      // Top-level tile: center half = "merge into folder", outer half =
-      // "reorder before/after".
+
+      // Top-level tile. Decide what action this hover represents based
+      // on (a) where the cursor is on the tile, and (b) whether the
+      // dragged item even *can* be merged. Items being dragged out of
+      // a folder are reorder-only — merging would just shuffle them
+      // sideways, which is never what the user wants.
+      const draggedId = e.dataTransfer.types.includes('text/plain')
+        ? null  // can't read in dragover, fall through
+        : null;
       const rect = tile.getBoundingClientRect();
       const offsetX = e.clientX - rect.left;
-      const inMergeZone = offsetX > rect.width * 0.25 && offsetX < rect.width * 0.75;
-      tile.classList.toggle('is-merge-target', inMergeZone);
-      tile.classList.toggle('is-drop-target', !inMergeZone);
+
+      // Insertion side: which half of the tile the cursor is on tells us
+      // whether the dragged item will land before or after this one.
+      const onLeftHalf = offsetX < rect.width * 0.5;
+      tile.classList.toggle('is-drop-before', onLeftHalf);
+      tile.classList.toggle('is-drop-after', !onLeftHalf);
+
+      // Merge zone: a tight 28%-wide center disk (36%–64%). The previous
+      // 50% zone made accidental merges too easy. Now merging requires
+      // a deliberate pause in the center.
+      const inMergeZone =
+        offsetX > rect.width * 0.36 && offsetX < rect.width * 0.64;
+
+      if (inMergeZone) {
+        // Start (or keep) the hold timer. Only after MERGE_HOLD_MS does
+        // the merge highlight activate. Until then, show reorder visual.
+        if (!mergeHoldTimer && !tile.classList.contains('is-merge-target')) {
+          mergeHoldTimer = setTimeout(() => {
+            tile.classList.add('is-merge-target');
+            tile.classList.remove('is-drop-before', 'is-drop-after');
+            mergeHoldTimer = null;
+          }, MERGE_HOLD_MS);
+        }
+      } else {
+        // Cursor moved out of merge zone — abort any pending hold and
+        // clear the merge highlight if it was set.
+        clearMergeHold();
+        tile.classList.remove('is-merge-target');
+      }
     });
 
     tile.addEventListener('dragleave', () => {
-      tile.classList.remove('is-drop-target', 'is-merge-target');
+      clearMergeHold();
+      tile.classList.remove('is-drop-before', 'is-drop-after', 'is-merge-target');
     });
 
     tile.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       const wasMerge = tile.classList.contains('is-merge-target');
-      tile.classList.remove('is-drop-target', 'is-merge-target');
+      clearMergeHold();
+      tile.classList.remove('is-drop-before', 'is-drop-after', 'is-merge-target');
 
       const draggedId = e.dataTransfer.getData('text/plain');
       const targetId  = fav.id;
@@ -915,24 +966,26 @@
             mutated = true;
           }
         } else {
-          // Move dragged from wherever it was into this folder, slotted
-          // in at the position of the tile it was dropped onto.
           mutated = addToFolder(draggedId, ctx.folderId, targetId);
         }
       }
-      // Case B: this tile is at the top level. Folder vs. reorder by zone.
+      // Case B: this tile is at the top level. Three possibilities:
+      //  - merge intent + favorite-on-favorite + same parent context
+      //    -> create new folder
+      //  - dragged came out of a folder -> always reorder, never merge
+      //    (extracting + immediately re-folding is not a thing users
+      //     want; this is the source of accidental folders)
+      //  - everything else -> reorder
       else {
-        if (wasMerge && kindOf(dragged.item) === 'favorite') {
-          // If the dragged favorite came from inside a folder, hoist it
-          // to the top level first so mergeIntoFolder can find it.
-          if (dragged.parent) removeFromFolder(draggedId);
+        const draggedFromFolder = !!dragged.parent;
+        const canMerge = wasMerge
+                       && kindOf(dragged.item) === 'favorite'
+                       && !draggedFromFolder;
+        if (canMerge) {
           mutated = mergeIntoFolder(draggedId, targetId);
         } else {
-          // Otherwise reorder. If dragged is from inside a folder, first
-          // hoist it out so the reorder happens at the top level.
-          if (dragged.parent) {
-            removeFromFolder(draggedId);
-          }
+          // Hoist out of folder first if needed so reorder is at top level.
+          if (draggedFromFolder) removeFromFolder(draggedId);
           reorderFavorites(draggedId, targetId);
           mutated = true;
         }
