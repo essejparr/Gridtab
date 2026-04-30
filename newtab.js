@@ -31,37 +31,44 @@
    * used to render the picker thumbnail (no need to actually apply the
    * theme to read its colors).
    */
+  // Theme registry. Order matters for the picker UI: Auto is always
+  // first (the "follow OS" default), then all light themes grouped,
+  // then all dark themes grouped. Within each group, free themes come
+  // before pro themes so the most accessible options sit at the top.
   const THEMES = [
+    // Auto (sits alone)
     { id: 'auto',   name: 'Auto',   tier: 'free',
       // Auto doesn't have a single set of colors — it follows the OS.
       // Show the light-mode preview as a reasonable representation.
       swatch: ['#f4f5f7', '#ffffff', '#e5e7eb', '#2563eb'] },
+    // Light themes
     { id: 'light',  name: 'Light',  tier: 'free',
       swatch: ['#f4f5f7', '#ffffff', '#e5e7eb', '#2563eb'] },
-    { id: 'dark',   name: 'Dark',   tier: 'free',
-      swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
     { id: 'sunset', name: 'Sunset', tier: 'pro',
       swatch: ['#fbf2e7', '#ffffff', '#f0d9c0', '#e85d3a'] },
-    { id: 'forest', name: 'Forest', tier: 'pro',
-      swatch: ['#1a2820', '#243831', '#3a544a', '#d4a857'] },
-    { id: 'synthwave', name: 'Synthwave', tier: 'pro',
-      swatch: ['#0e0524', '#1a0e3d', '#2d1a5c', '#ff2e8a'] },
     { id: 'marble', name: 'Marble', tier: 'pro',
       swatch: ['#ebe9e4', '#f4f3ef', '#c9c5bd', '#5a3f1f'] },
-    { id: 'cobalt', name: 'Cobalt', tier: 'pro',
-      swatch: ['#0a1628', '#0f1f3a', '#1f3358', '#f5d6a8'] },
-    { id: 'neon', name: 'Neon', tier: 'pro',
-      swatch: ['#04141a', '#072028', '#0d3a44', '#22f5e3'] },
     { id: 'polaroid', name: 'Polaroid', tier: 'pro',
       swatch: ['#e8e2d6', '#f5f0e4', '#cfc6b3', '#3d6e6e'] },
-    { id: 'ember', name: 'Ember', tier: 'pro',
-      swatch: ['#1a0d0a', '#241410', '#3d201a', '#ff6a2c'] },
-    { id: 'oxide', name: 'Oxide', tier: 'pro',
-      swatch: ['#0c1f24', '#102a30', '#1a3d44', '#d97448'] },
-    { id: 'slab', name: 'Slab', tier: 'pro',
-      swatch: ['#0a0a0a', '#161616', '#2a2a2a', '#a01818'] },
     { id: 'vellum', name: 'Vellum', tier: 'pro',
       swatch: ['#f0ece4', '#f7f3ec', '#d6cfc0', '#1a1a1a'] },
+    // Dark themes
+    { id: 'dark',   name: 'Dark',   tier: 'free',
+      swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
+    { id: 'forest', name: 'Forest', tier: 'pro',
+      swatch: ['#1a2820', '#243831', '#3a544a', '#d4a857'] },
+    { id: 'cobalt', name: 'Cobalt', tier: 'pro',
+      swatch: ['#0a1628', '#0f1f3a', '#1f3358', '#f5d6a8'] },
+    { id: 'oxide', name: 'Oxide', tier: 'pro',
+      swatch: ['#0c1f24', '#102a30', '#1a3d44', '#d97448'] },
+    { id: 'synthwave', name: 'Synthwave', tier: 'pro',
+      swatch: ['#0e0524', '#1a0e3d', '#2d1a5c', '#ff2e8a'] },
+    { id: 'neon', name: 'Neon', tier: 'pro',
+      swatch: ['#04141a', '#072028', '#0d3a44', '#22f5e3'] },
+    { id: 'ember', name: 'Ember', tier: 'pro',
+      swatch: ['#1a0d0a', '#241410', '#3d201a', '#ff6a2c'] },
+    { id: 'slab', name: 'Slab', tier: 'pro',
+      swatch: ['#0a0a0a', '#161616', '#2a2a2a', '#a01818'] },
   ];
 
   /**
@@ -397,6 +404,11 @@
 
       const locked = theme.tier === 'pro' && !isThemeAvailable(theme.id, settings);
       if (locked) card.classList.add('is-locked');
+
+      // The 'dark' theme is the first card in the dark-themes group.
+      // CSS uses this class to draw a subtle horizontal separator above
+      // it, hinting at the light/dark grouping without a visible label.
+      if (theme.id === 'dark') card.classList.add('is-section-start');
 
       // Mini theme preview: page bg fills the rectangle, an inner
       // "surface tile" represents one of the favorite tiles, and a dot

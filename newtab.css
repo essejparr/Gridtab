@@ -737,6 +737,29 @@ button { font-family: inherit; cursor: pointer; }
 .theme-card.is-locked { opacity: 0.85; }
 .theme-card.is-locked .theme-card-name { color: var(--text-muted); }
 
+/* Subtle separator between the light and dark theme groups in the
+   picker. Applies a thin top border to the dark-section-start card
+   AND its right-side sibling (same grid row) so the whole row reads
+   as separated from the lights above. No labels — the visual gap
+   alone hints at the grouping. */
+.theme-card.is-section-start,
+.theme-card.is-section-start + .theme-card {
+  margin-top: 8px;
+  position: relative;
+}
+.theme-card.is-section-start::before,
+.theme-card.is-section-start + .theme-card::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 /* ---------- Grid of tiles ---------- */
 
 .grid {
