@@ -915,6 +915,8 @@
     tile.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
+      // Capture insertion side before we strip the indicator classes.
+      const dropSide = tile.classList.contains('is-drop-after') ? 'after' : 'before';
       tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
       const draggedId = e.dataTransfer.getData('text/plain');
       if (!draggedId || draggedId === folder.id) return;
@@ -927,7 +929,7 @@
 
       if (kindOf(dragged.item) === 'folder') {
         // Folder dropped onto folder — reorder, don't nest.
-        reorderFavorites(draggedId, folder.id);
+        reorderFavorites(draggedId, folder.id, dropSide);
         mutated = true;
       } else {
         // Favorite dropped onto folder — add to it.
@@ -1063,6 +1065,9 @@
       e.preventDefault();
       e.stopPropagation();
       const wasMerge = tile.classList.contains('is-merge-target');
+      // Capture the insertion side from the classes set during dragover.
+      // 'after' if right-half drop, otherwise 'before' (also the safe default).
+      const dropSide = tile.classList.contains('is-drop-after') ? 'after' : 'before';
       clearMergeHold();
       tile.classList.remove('is-drop-before', 'is-drop-after', 'is-merge-target');
 
@@ -1085,15 +1090,21 @@
         if (!folder) return;
         if (kindOf(dragged.item) === 'folder') return; // can't put folder in folder
         if (dragged.parent && dragged.parent.id === ctx.folderId) {
-          // Reorder within the same folder.
+          // Reorder within the same folder. Same before/after + index
+          // shift logic as the top-level reorderFavorites.
           const arr = folder.items;
           const fromIdx = arr.findIndex((c) => c.id === draggedId);
-          const toIdx   = arr.findIndex((c) => c.id === targetId);
-          if (fromIdx !== -1 && toIdx !== -1) {
-            const [moved] = arr.splice(fromIdx, 1);
-            arr.splice(toIdx, 0, moved);
-            mutated = true;
+          if (fromIdx === -1) return;
+          const [moved] = arr.splice(fromIdx, 1);
+          let insertAt = arr.findIndex((c) => c.id === targetId);
+          if (insertAt === -1) {
+            // Target was somehow lost — restore by re-inserting at original.
+            arr.splice(fromIdx, 0, moved);
+            return;
           }
+          if (dropSide === 'after') insertAt += 1;
+          arr.splice(insertAt, 0, moved);
+          mutated = true;
         } else {
           mutated = addToFolder(draggedId, ctx.folderId, targetId);
         }
@@ -1115,7 +1126,7 @@
         } else {
           // Hoist out of folder first if needed so reorder is at top level.
           if (draggedFromFolder) removeFromFolder(draggedId);
-          reorderFavorites(draggedId, targetId);
+          reorderFavorites(draggedId, targetId, dropSide);
           mutated = true;
         }
       }
@@ -1797,15 +1808,34 @@
   }
 
   /**
-   * Mutate `favorites` in place, moving the dragged item to occupy the
-   * target's slot. Top-level reorder only.
+   * Mutate `favorites` in place, moving the dragged item to land
+   * immediately before or after the target item. Top-level only.
+   *
+   * `side` is 'before' or 'after'. If the user drops on the left half
+   * of the target, side='before' (dragged lands at target's position,
+   * target shifts right). If on the right half, side='after' (dragged
+   * lands one slot past the target).
+   *
+   * Care is taken with index shifting: when the dragged item lives
+   * before the target in the array, removing it slides the target's
+   * index down by one. We compute the insertion index *after* the
+   * removal so the math always lands the item where the user expects.
    */
-  function reorderFavorites(draggedId, targetId) {
+  function reorderFavorites(draggedId, targetId, side = 'before') {
     const fromIndex = favorites.findIndex((f) => f.id === draggedId);
     const toIndex   = favorites.findIndex((f) => f.id === targetId);
     if (fromIndex === -1 || toIndex === -1) return;
+    if (fromIndex === toIndex) return;
+
+    // Remove the dragged item first.
     const [moved] = favorites.splice(fromIndex, 1);
-    favorites.splice(toIndex, 0, moved);
+
+    // Recompute the target's index after the removal. If the dragged
+    // item was originally to the left of the target, every index right
+    // of it shifted down by one — including the target's.
+    let insertAt = favorites.findIndex((f) => f.id === targetId);
+    if (side === 'after') insertAt += 1;
+    favorites.splice(insertAt, 0, moved);
   }
 
   // -----------------------------------------------------------------------
