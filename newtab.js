@@ -58,6 +58,10 @@
       swatch: ['#1a0d0a', '#241410', '#3d201a', '#ff6a2c'] },
     { id: 'oxide', name: 'Oxide', tier: 'pro',
       swatch: ['#0c1f24', '#102a30', '#1a3d44', '#d97448'] },
+    { id: 'slab', name: 'Slab', tier: 'pro',
+      swatch: ['#0a0a0a', '#161616', '#2a2a2a', '#a01818'] },
+    { id: 'vellum', name: 'Vellum', tier: 'pro',
+      swatch: ['#f0ece4', '#f7f3ec', '#d6cfc0', '#1a1a1a'] },
   ];
 
   /**

@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -286,6 +286,56 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Slab (Pro) — industrial / brutalist energy. Near-black background
+   with the faintest warm undertone (pure black reads as cheap and
+   digital — the warm hint suggests aged concrete or weathered black
+   paint). The accent is deep oxidized red — meat, blood, rusted iron
+   — not a friendly cherry red. Borders are tight dark grey, almost
+   invisible against bg, so tiles feel hard-edged with no decorative
+   softening. Shadows are sharp and dark, no diffusion. The whole
+   theme refuses to be comfortable. */
+:root[data-theme="slab"] {
+  --bg: #0a0a0a;
+  --bg-elev: #111111;
+  --surface: #161616;
+  --surface-hover: #1f1f1f;
+  --border: #2a2a2a;
+  --border-strong: #3d3d3d;
+  --text: #ededed;
+  --text-muted: #8a8a8a;
+  --text-subtle: #5a5a5a;
+  --accent: #a01818;
+  --accent-hover: #bd1d1d;
+  --accent-text: #ededed;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.50);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.60);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.75);
+}
+
+/* Vellum (Pro) — monastic minimalism, manuscript-skin paper, ink-on-
+   bone restraint. The background is a warm cream pulled cooler and
+   lighter than parchment (distinct from Sunset's peachy cream and
+   Marble's cool stone-white). The accent is near-black ink — the
+   strongest possible value contrast instead of color contrast. No
+   saturated hue anywhere. Reads as "this design refuses to perform." */
+:root[data-theme="vellum"] {
+  --bg: #f0ece4;
+  --bg-elev: #f4f0e8;
+  --surface: #f7f3ec;
+  --surface-hover: #ebe6dc;
+  --border: #d6cfc0;
+  --border-strong: #b8b0a0;
+  --text: #1a1a1a;
+  --text-muted: #5a5650;
+  --text-subtle: #8a857c;
+  --accent: #1a1a1a;
+  --accent-hover: #000000;
+  --accent-text: #f7f3ec;
+  --shadow-sm: 0 1px 2px rgba(40, 35, 25, 0.06);
+  --shadow-md: 0 4px 12px rgba(40, 35, 25, 0.08);
+  --shadow-lg: 0 12px 32px rgba(40, 35, 25, 0.14);
 }
 
 * { box-sizing: border-box; }
