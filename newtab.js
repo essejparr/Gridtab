@@ -54,6 +54,10 @@
       swatch: ['#04141a', '#072028', '#0d3a44', '#22f5e3'] },
     { id: 'polaroid', name: 'Polaroid', tier: 'pro',
       swatch: ['#e8e2d6', '#f5f0e4', '#cfc6b3', '#3d6e6e'] },
+    { id: 'ember', name: 'Ember', tier: 'pro',
+      swatch: ['#1a0d0a', '#241410', '#3d201a', '#ff6a2c'] },
+    { id: 'oxide', name: 'Oxide', tier: 'pro',
+      swatch: ['#0c1f24', '#102a30', '#1a3d44', '#d97448'] },
   ];
 
   /**
@@ -220,6 +224,11 @@
   let pendingCustomIcon = null;
   // Pending folder color while editing in the modal.
   let pendingFolderColor = 'default';
+  // Tracks what's being dragged in the current drag session. Set on
+  // dragstart, cleared on dragend. Lets dragover handlers branch on
+  // the kind of dragged item (favorite vs folder), since dataTransfer
+  // payloads are locked from reading during dragover.
+  let currentDragId = null;
 
   // -----------------------------------------------------------------------
   // Storage helpers (chrome.storage.local)
@@ -862,31 +871,51 @@
     tile.addEventListener('dragstart', (e) => {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', folder.id);
+      currentDragId = folder.id;
       setTimeout(() => {
         tile.classList.add('is-dragging');
         document.body.classList.add('is-dragging');
       }, 0);
     });
     tile.addEventListener('dragend', () => {
+      currentDragId = null;
       tile.classList.remove('is-dragging');
       document.body.classList.remove('is-dragging');
-      document.querySelectorAll('.tile.is-drop-target')
-        .forEach((el) => el.classList.remove('is-drop-target'));
+      document.querySelectorAll('.tile.is-drop-target, .tile.is-drop-before, .tile.is-drop-after')
+        .forEach((el) => el.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after'));
     });
     tile.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      if (!tile.classList.contains('is-dragging')) {
+      if (tile.classList.contains('is-dragging')) return;
+
+      // Branch on what's being dragged. We can't read the dataTransfer
+      // payload during dragover, so consult the module-scoped tracker.
+      const draggedLoc = currentDragId ? findItemById(currentDragId) : null;
+      const draggingFolder = draggedLoc && kindOf(draggedLoc.item) === 'folder';
+
+      if (draggingFolder) {
+        // Folder onto folder = reorder. Use the same before/after
+        // insertion bars as favorite reordering for visual parity.
+        const rect = tile.getBoundingClientRect();
+        const onLeftHalf = (e.clientX - rect.left) < rect.width * 0.5;
+        tile.classList.toggle('is-drop-before', onLeftHalf);
+        tile.classList.toggle('is-drop-after', !onLeftHalf);
+        tile.classList.remove('is-drop-target');
+      } else {
+        // Favorite onto folder = add to folder. Single-ring highlight
+        // (same as the existing add-to-folder cue).
         tile.classList.add('is-drop-target');
+        tile.classList.remove('is-drop-before', 'is-drop-after');
       }
     });
     tile.addEventListener('dragleave', () => {
-      tile.classList.remove('is-drop-target');
+      tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
     });
     tile.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      tile.classList.remove('is-drop-target');
+      tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
       const draggedId = e.dataTransfer.getData('text/plain');
       if (!draggedId || draggedId === folder.id) return;
 
@@ -934,6 +963,7 @@
     tile.addEventListener('dragstart', (e) => {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', fav.id);
+      currentDragId = fav.id;
       setTimeout(() => {
         tile.classList.add('is-dragging');
         document.body.classList.add('is-dragging');
@@ -941,6 +971,7 @@
     });
 
     tile.addEventListener('dragend', () => {
+      currentDragId = null;
       tile.classList.remove('is-dragging');
       document.body.classList.remove('is-dragging');
       document.querySelectorAll('.tile.is-drop-target, .tile.is-merge-target, .tile.is-drop-before, .tile.is-drop-after')
@@ -978,10 +1009,10 @@
       // on (a) where the cursor is on the tile, and (b) whether the
       // dragged item even *can* be merged. Items being dragged out of
       // a folder are reorder-only — merging would just shuffle them
-      // sideways, which is never what the user wants.
-      const draggedId = e.dataTransfer.types.includes('text/plain')
-        ? null  // can't read in dragover, fall through
-        : null;
+      // sideways, which is never what the user wants. Folders also
+      // can't be merged into other tiles (no nested folders).
+      const draggedLoc = currentDragId ? findItemById(currentDragId) : null;
+      const draggingFolder = draggedLoc && kindOf(draggedLoc.item) === 'folder';
       const rect = tile.getBoundingClientRect();
       const offsetX = e.clientX - rect.left;
 
@@ -990,6 +1021,14 @@
       const onLeftHalf = offsetX < rect.width * 0.5;
       tile.classList.toggle('is-drop-before', onLeftHalf);
       tile.classList.toggle('is-drop-after', !onLeftHalf);
+
+      // Skip merge zone entirely if the dragged item is a folder —
+      // folder-into-favorite has no merge meaning, only reorder.
+      if (draggingFolder) {
+        clearMergeHold();
+        tile.classList.remove('is-merge-target');
+        return;
+      }
 
       // Merge zone: a tight 28%-wide center disk (36%–64%). The previous
       // 50% zone made accidental merges too easy. Now merging requires

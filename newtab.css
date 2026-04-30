@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -237,6 +237,55 @@
   --shadow-sm: 0 1px 2px rgba(60, 50, 35, 0.07);
   --shadow-md: 0 4px 12px rgba(60, 50, 35, 0.10);
   --shadow-lg: 0 12px 32px rgba(60, 50, 35, 0.16);
+}
+
+/* Ember (Pro) — forge / fire-pit / lava energy. The background is a
+   deep charcoal-red with warm undertones (not pure black, which would
+   feel cold and detach the orange) so the accent reads as glowing
+   rather than just sitting on dark. The accent is a saturated
+   orange-red that pops without going aggressive. Shadows lean orange
+   so hover effects feel like ember-glow. Sister theme to Synthwave
+   and Neon: same energy class, warm where they're cool. */
+:root[data-theme="ember"] {
+  --bg: #1a0d0a;
+  --bg-elev: #241410;
+  --surface: #2d1a14;
+  --surface-hover: #3a2218;
+  --border: #3d201a;
+  --border-strong: #5a342a;
+  --text: #fde8da;
+  --text-muted: #c79a82;
+  --text-subtle: #8a6655;
+  --accent: #ff6a2c;
+  --accent-hover: #ff8551;
+  --accent-text: #1a0d0a;
+  --shadow-sm: 0 1px 2px rgba(255, 106, 44, 0.12);
+  --shadow-md: 0 4px 16px rgba(255, 106, 44, 0.18);
+  --shadow-lg: 0 12px 36px rgba(180, 60, 20, 0.32);
+}
+
+/* Oxide (Pro) — weathered industrial / Mars colony / corroded steel.
+   The background is a deep teal-blue (cool, slightly metallic) and
+   the accent is rust orange — the specific color of oxidized iron.
+   The cool-on-warm contrast feels engineered, sci-fi, like control
+   panels in low light. Distinct from Forest's organic gold-on-green
+   by being more saturated and more "fabricated." */
+:root[data-theme="oxide"] {
+  --bg: #0c1f24;
+  --bg-elev: #102a30;
+  --surface: #143540;
+  --surface-hover: #1a4250;
+  --border: #1a3d44;
+  --border-strong: #2a5d68;
+  --text: #e2eef0;
+  --text-muted: #8aa8ad;
+  --text-subtle: #547278;
+  --accent: #d97448;
+  --accent-hover: #e88858;
+  --accent-text: #0c1f24;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 * { box-sizing: border-box; }
