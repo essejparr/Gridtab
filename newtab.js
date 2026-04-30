@@ -238,7 +238,17 @@
     return new Promise((resolve) => {
       chrome.storage.local.get([STORAGE_KEY], (result) => {
         const stored = result[STORAGE_KEY];
-        resolve(Array.isArray(stored) ? stored : []);
+        if (!Array.isArray(stored)) {
+          resolve([]);
+          return;
+        }
+        // Defensively filter out malformed entries. An earlier bug could
+        // push non-objects (booleans) into the array; this purges any
+        // such corruption so the UI doesn't render broken tiles.
+        const clean = stored.filter((item) =>
+          item && typeof item === 'object' && typeof item.id === 'string'
+        );
+        resolve(clean);
       });
     });
   }
@@ -846,7 +856,6 @@
     tile.appendChild(plus);
 
     tile.addEventListener('click', openAddModal);
-    tile.addEventListener('dragover', (e) => e.preventDefault());
 
     return tile;
   }
@@ -1912,23 +1921,25 @@
   // -----------------------------------------------------------------------
 
   /**
-   * Grid-level drop handler. Tile drop handlers call stopPropagation,
-   * so this only fires when the user dropped into empty grid space
-   * (between tiles, after the last tile, or below the last row).
+   * Document-level drop handler. Tile drop handlers call stopPropagation,
+   * so this only fires when the user dropped into empty space outside
+   * any tile (between tiles, after the last tile, in the grid's bottom
+   * margin, or anywhere else on the page that's not a UI control).
    * Behavior:
    *  - If the dragged item lives in a folder, hoist it out to top level.
    *  - In all cases, move the dragged item to the end of the top level.
    * This makes "drag out of folder + drop anywhere" a viable path —
    * users can quickly extract favorites by dragging them to empty space.
    */
-  grid.addEventListener('dragover', (e) => {
+  document.addEventListener('dragover', (e) => {
     // Only allow drop here if there's actually a drag in progress.
     if (currentDragId) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
     }
   });
-  grid.addEventListener('drop', async (e) => {
+  document.addEventListener('drop', async (e) => {
+    if (!currentDragId) return;
     e.preventDefault();
     const draggedId = e.dataTransfer.getData('text/plain');
     if (!draggedId) return;
@@ -1938,19 +1949,12 @@
 
     const previous = JSON.parse(JSON.stringify(favorites));
 
-    // If dragged is currently inside a folder, take it out first.
-    if (dragged.parent) {
-      const removed = removeFromFolder(draggedId);
-      if (removed) {
-        favorites.push(removed);
-      }
-    } else {
-      // Top-level item dropped on empty space — move to end.
-      const idx = favorites.findIndex((f) => f.id === draggedId);
-      if (idx === -1 || idx === favorites.length - 1) return; // already last
-      const [moved] = favorites.splice(idx, 1);
-      favorites.push(moved);
-    }
+    // Whether the item came from a folder or top level, the target
+    // here is "end of top-level grid". removeItemById splices it out
+    // of wherever it currently lives and returns the actual item.
+    const item = removeItemById(draggedId);
+    if (!item) return;
+    favorites.push(item);
 
     const result = await saveFavorites(favorites);
     if (!result.ok) { favorites = previous; return; }
