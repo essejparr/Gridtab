@@ -904,20 +904,38 @@
       const draggingFolder = draggedLoc && kindOf(draggedLoc.item) === 'folder';
 
       if (draggingFolder) {
-        // Folder onto folder = reorder. Use the same before/after
-        // insertion bars as favorite reordering for visual parity.
+        // Folder onto folder = reorder only. Use insertion bars.
         const rect = tile.getBoundingClientRect();
         const onLeftHalf = (e.clientX - rect.left) < rect.width * 0.5;
         tile.classList.toggle('is-drop-before', onLeftHalf);
         tile.classList.toggle('is-drop-after', !onLeftHalf);
         tile.classList.remove('is-drop-target', 'is-add-target');
       } else {
-        // Favorite onto folder = add to folder. Use a strong "add" ring
-        // + the folder's color so the user sees this is a deliberate
-        // drop target, AND the folder's tooltip (name + count) stays
-        // visible during drag so they know which folder they're hitting.
-        tile.classList.add('is-add-target');
-        tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
+        // Favorite onto folder = two possible actions:
+        //  - center zone (36%–64%): add to folder (strong ring)
+        //  - outer halves: reorder around the folder (insertion bars)
+        // Same zone shape as favorite-on-favorite merge logic, so the
+        // gesture is consistent across all tile types.
+        // EXCEPTION: if the dragged favorite came from a folder, we
+        // never offer "add to a different folder" via center zone —
+        // extract-then-immediately-refold is almost never intended,
+        // same logic that suppresses merge for folder-extracted items.
+        const draggedFromFolder = !!(draggedLoc && draggedLoc.parent);
+        const rect = tile.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const inAddZone = !draggedFromFolder
+                       && offsetX > rect.width * 0.36
+                       && offsetX < rect.width * 0.64;
+
+        if (inAddZone) {
+          tile.classList.add('is-add-target');
+          tile.classList.remove('is-drop-before', 'is-drop-after');
+        } else {
+          const onLeftHalf = offsetX < rect.width * 0.5;
+          tile.classList.toggle('is-drop-before', onLeftHalf);
+          tile.classList.toggle('is-drop-after', !onLeftHalf);
+          tile.classList.remove('is-drop-target', 'is-add-target');
+        }
       }
     });
     tile.addEventListener('dragleave', () => {
@@ -926,7 +944,10 @@
     tile.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      // Capture insertion side before we strip the indicator classes.
+      // Capture which intent the dragover ended on — read class state
+      // before stripping. is-add-target = drop into folder; otherwise
+      // it's a reorder, with the side determined by is-drop-after.
+      const wasAdd = tile.classList.contains('is-add-target');
       const dropSide = tile.classList.contains('is-drop-after') ? 'after' : 'before';
       tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after', 'is-add-target');
       const draggedId = e.dataTransfer.getData('text/plain');
@@ -939,12 +960,22 @@
       let mutated = false;
 
       if (kindOf(dragged.item) === 'folder') {
-        // Folder dropped onto folder — reorder, don't nest.
+        // Folder dropped onto folder — reorder, don't nest. Folders
+        // never enter add-to-folder mode (no nested folders).
         reorderFavorites(draggedId, folder.id, dropSide);
         mutated = true;
-      } else {
-        // Favorite dropped onto folder — add to it.
+      } else if (wasAdd) {
+        // Favorite dropped on folder's center zone — add to it.
+        // Hoist out of any other folder it lived in first.
+        if (dragged.parent) removeFromFolder(draggedId);
         mutated = addToFolder(draggedId, folder.id);
+      } else {
+        // Favorite dropped on folder's outer half — reorder around
+        // the folder at top level, like reordering between any two
+        // top-level items.
+        if (dragged.parent) removeFromFolder(draggedId);
+        reorderFavorites(draggedId, folder.id, dropSide);
+        mutated = true;
       }
       if (!mutated) return;
       const result = await saveFavorites(favorites);
