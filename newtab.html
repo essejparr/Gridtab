@@ -182,64 +182,66 @@
   <!-- Modal for app settings (tile size, spacing, icon size, theme). -->
   <div id="settingsModal" class="modal" hidden aria-hidden="true">
     <div class="modal-backdrop" data-close-settings="true"></div>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <h2 id="settingsTitle" class="modal-title">Settings</h2>
+    <div class="modal-card modal-card-tall" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle" class="modal-title modal-header">Settings</h2>
 
-      <div class="form">
-        <div class="field">
-          <span class="field-label">Tile size</span>
-          <div class="seg" role="radiogroup" aria-label="Tile size">
-            <button type="button" class="seg-btn" data-setting="tileSize" data-value="sm">Small</button>
-            <button type="button" class="seg-btn" data-setting="tileSize" data-value="md">Medium</button>
-            <button type="button" class="seg-btn" data-setting="tileSize" data-value="lg">Large</button>
+      <div class="modal-body">
+        <div class="form">
+          <div class="field">
+            <span class="field-label">Tile size</span>
+            <div class="seg" role="radiogroup" aria-label="Tile size">
+              <button type="button" class="seg-btn" data-setting="tileSize" data-value="sm">Small</button>
+              <button type="button" class="seg-btn" data-setting="tileSize" data-value="md">Medium</button>
+              <button type="button" class="seg-btn" data-setting="tileSize" data-value="lg">Large</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Spacing between tiles</span>
+            <div class="seg" role="radiogroup" aria-label="Spacing between tiles">
+              <button type="button" class="seg-btn" data-setting="gap" data-value="tight">Tight</button>
+              <button type="button" class="seg-btn" data-setting="gap" data-value="normal">Normal</button>
+              <button type="button" class="seg-btn" data-setting="gap" data-value="relaxed">Relaxed</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Icon size</span>
+            <div class="seg" role="radiogroup" aria-label="Icon size">
+              <button type="button" class="seg-btn" data-setting="iconSize" data-value="sm">Small</button>
+              <button type="button" class="seg-btn" data-setting="iconSize" data-value="md">Medium</button>
+              <button type="button" class="seg-btn" data-setting="iconSize" data-value="lg">Large</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Theme</span>
+            <div class="theme-grid" id="themeGrid"></div>
+          </div>
+
+          <!-- Folder controls — quick actions for managing many folders. -->
+          <div class="field">
+            <span class="field-label">Folders</span>
+            <div class="folder-actions">
+              <button id="expandAllBtn" type="button" class="btn btn-ghost btn-sm">
+                Expand all
+              </button>
+              <button id="collapseAllBtn" type="button" class="btn btn-ghost btn-sm">
+                Collapse all
+              </button>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="field">
-          <span class="field-label">Spacing between tiles</span>
-          <div class="seg" role="radiogroup" aria-label="Spacing between tiles">
-            <button type="button" class="seg-btn" data-setting="gap" data-value="tight">Tight</button>
-            <button type="button" class="seg-btn" data-setting="gap" data-value="normal">Normal</button>
-            <button type="button" class="seg-btn" data-setting="gap" data-value="relaxed">Relaxed</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Icon size</span>
-          <div class="seg" role="radiogroup" aria-label="Icon size">
-            <button type="button" class="seg-btn" data-setting="iconSize" data-value="sm">Small</button>
-            <button type="button" class="seg-btn" data-setting="iconSize" data-value="md">Medium</button>
-            <button type="button" class="seg-btn" data-setting="iconSize" data-value="lg">Large</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Theme</span>
-          <div class="theme-grid" id="themeGrid"></div>
-        </div>
-
-        <!-- Folder controls — quick actions for managing many folders. -->
-        <div class="field">
-          <span class="field-label">Folders</span>
-          <div class="folder-actions">
-            <button id="expandAllBtn" type="button" class="btn btn-ghost btn-sm">
-              Expand all
-            </button>
-            <button id="collapseAllBtn" type="button" class="btn btn-ghost btn-sm">
-              Collapse all
-            </button>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button id="resetSettingsBtn" type="button" class="btn btn-ghost">
-            Reset to defaults
+      <div class="modal-actions modal-footer">
+        <button id="resetSettingsBtn" type="button" class="btn btn-ghost">
+          Reset to defaults
+        </button>
+        <div class="modal-actions-right">
+          <button type="button" class="btn btn-primary" data-close-settings="true">
+            Done
           </button>
-          <div class="modal-actions-right">
-            <button type="button" class="btn btn-primary" data-close-settings="true">
-              Done
-            </button>
-          </div>
         </div>
       </div>
     </div>

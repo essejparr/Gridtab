@@ -1272,6 +1272,37 @@ body.is-dragging .tile-folder.is-add-target .tile-tooltip {
   animation: pop .18s ease;
 }
 
+/* Tall variant for content-heavy modals (e.g., Settings). Caps the
+   modal at the viewport height, keeps the title and action buttons
+   fixed in place, and lets the middle scroll. The padding moves from
+   the card itself onto the inner regions so the sticky header/footer
+   sit flush against the card edge. */
+.modal-card-tall {
+  padding: 0;
+  max-height: min(720px, 90vh);
+  display: flex;
+  flex-direction: column;
+}
+.modal-card-tall .modal-header {
+  padding: 24px 28px 16px;
+  margin: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.modal-card-tall .modal-body {
+  padding: 20px 28px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0; /* Required for flex children to shrink below content */
+}
+.modal-card-tall .modal-footer {
+  padding: 16px 28px 20px;
+  margin: 0;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
 .modal-title {
   margin: 0 0 20px;
   font-size: 18px;
