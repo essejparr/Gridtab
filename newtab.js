@@ -881,8 +881,8 @@
       currentDragId = null;
       tile.classList.remove('is-dragging');
       document.body.classList.remove('is-dragging');
-      document.querySelectorAll('.tile.is-drop-target, .tile.is-drop-before, .tile.is-drop-after')
-        .forEach((el) => el.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after'));
+      document.querySelectorAll('.tile.is-drop-target, .tile.is-drop-before, .tile.is-drop-after, .tile.is-add-target')
+        .forEach((el) => el.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after', 'is-add-target'));
     });
     tile.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -901,23 +901,25 @@
         const onLeftHalf = (e.clientX - rect.left) < rect.width * 0.5;
         tile.classList.toggle('is-drop-before', onLeftHalf);
         tile.classList.toggle('is-drop-after', !onLeftHalf);
-        tile.classList.remove('is-drop-target');
+        tile.classList.remove('is-drop-target', 'is-add-target');
       } else {
-        // Favorite onto folder = add to folder. Single-ring highlight
-        // (same as the existing add-to-folder cue).
-        tile.classList.add('is-drop-target');
-        tile.classList.remove('is-drop-before', 'is-drop-after');
+        // Favorite onto folder = add to folder. Use a strong "add" ring
+        // + the folder's color so the user sees this is a deliberate
+        // drop target, AND the folder's tooltip (name + count) stays
+        // visible during drag so they know which folder they're hitting.
+        tile.classList.add('is-add-target');
+        tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
       }
     });
     tile.addEventListener('dragleave', () => {
-      tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
+      tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after', 'is-add-target');
     });
     tile.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       // Capture insertion side before we strip the indicator classes.
       const dropSide = tile.classList.contains('is-drop-after') ? 'after' : 'before';
-      tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
+      tile.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after', 'is-add-target');
       const draggedId = e.dataTransfer.getData('text/plain');
       if (!draggedId || draggedId === folder.id) return;
 
@@ -976,9 +978,9 @@
       currentDragId = null;
       tile.classList.remove('is-dragging');
       document.body.classList.remove('is-dragging');
-      document.querySelectorAll('.tile.is-drop-target, .tile.is-merge-target, .tile.is-drop-before, .tile.is-drop-after')
+      document.querySelectorAll('.tile.is-drop-target, .tile.is-merge-target, .tile.is-drop-before, .tile.is-drop-after, .tile.is-add-target')
         .forEach((el) => el.classList.remove(
-          'is-drop-target', 'is-merge-target', 'is-drop-before', 'is-drop-after'));
+          'is-drop-target', 'is-merge-target', 'is-drop-before', 'is-drop-after', 'is-add-target'));
     });
 
     // Hold-to-merge state, scoped to this tile. The merge highlight
@@ -1908,6 +1910,52 @@
   // -----------------------------------------------------------------------
   // Event wiring
   // -----------------------------------------------------------------------
+
+  /**
+   * Grid-level drop handler. Tile drop handlers call stopPropagation,
+   * so this only fires when the user dropped into empty grid space
+   * (between tiles, after the last tile, or below the last row).
+   * Behavior:
+   *  - If the dragged item lives in a folder, hoist it out to top level.
+   *  - In all cases, move the dragged item to the end of the top level.
+   * This makes "drag out of folder + drop anywhere" a viable path —
+   * users can quickly extract favorites by dragging them to empty space.
+   */
+  grid.addEventListener('dragover', (e) => {
+    // Only allow drop here if there's actually a drag in progress.
+    if (currentDragId) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  });
+  grid.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData('text/plain');
+    if (!draggedId) return;
+
+    const dragged = findItemById(draggedId);
+    if (!dragged) return;
+
+    const previous = JSON.parse(JSON.stringify(favorites));
+
+    // If dragged is currently inside a folder, take it out first.
+    if (dragged.parent) {
+      const removed = removeFromFolder(draggedId);
+      if (removed) {
+        favorites.push(removed);
+      }
+    } else {
+      // Top-level item dropped on empty space — move to end.
+      const idx = favorites.findIndex((f) => f.id === draggedId);
+      if (idx === -1 || idx === favorites.length - 1) return; // already last
+      const [moved] = favorites.splice(idx, 1);
+      favorites.push(moved);
+    }
+
+    const result = await saveFavorites(favorites);
+    if (!result.ok) { favorites = previous; return; }
+    render();
+  });
 
   addBtn.addEventListener('click', openAddModal);
   emptyAddBtn.addEventListener('click', openAddModal);

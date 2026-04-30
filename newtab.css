@@ -779,6 +779,25 @@ button { font-family: inherit; cursor: pointer; }
    it's noise during reordering. */
 body.is-dragging .tile-tooltip { opacity: 0 !important; }
 
+/* Exception: when a folder is being hovered as an add-target during a
+   favorite drag, surface the tooltip so the user can see WHICH folder
+   they're about to drop into (name + item count). The tooltip needs
+   to win over the global suppression rule, hence the same selector
+   shape. */
+body.is-dragging .tile-folder.is-add-target .tile-tooltip {
+  opacity: 1 !important;
+}
+
+/* Folder being hovered by a favorite drop = "add to this folder."
+   Strong, deliberate ring in the folder's color (or accent for
+   default folders) so it reads as an obvious target. Lifts and scales
+   subtly, like the merge-target style on regular tiles. */
+.tile-folder.is-add-target {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 0 0 3px var(--folder-color, var(--accent)),
+              var(--shadow-lg);
+}
+
 /* Hero region: large centered favicon. With the footer removed, the icon
    is centered in the entire tile. */
 .tile-hero {
