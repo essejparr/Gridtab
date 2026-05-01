@@ -56,13 +56,14 @@
       swatch: ['#f6dfd2', '#fae8de', '#e3bfae', '#5a2a48'] },
     { id: 'slate', name: 'Slate', tier: 'pro',
       swatch: ['#d8dfe5', '#e3e8ed', '#b8c2cc', '#1e3a5f'] },
-    // Dark themes
-    { id: 'dark',   name: 'Dark',   tier: 'free',
-      swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
+    // Muted themes — mid-tone backgrounds between light and dark
     { id: 'dusk', name: 'Dusk', tier: 'pro',
       swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
     { id: 'sienna', name: 'Sienna', tier: 'pro',
       swatch: ['#7a5a48', '#8a6a55', '#5a4030', '#f0e0c8'] },
+    // Dark themes
+    { id: 'dark',   name: 'Dark',   tier: 'free',
+      swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
     { id: 'graphite', name: 'Graphite', tier: 'pro',
       swatch: ['#1a1a1a', '#222222', '#363636', '#e8e8e8'] },
     { id: 'forest', name: 'Forest', tier: 'pro',
@@ -417,10 +418,13 @@
       const locked = theme.tier === 'pro' && !isThemeAvailable(theme.id, settings);
       if (locked) card.classList.add('is-locked');
 
-      // The 'dark' theme is the first card in the dark-themes group.
-      // CSS uses this class to draw a subtle horizontal separator above
-      // it, hinting at the light/dark grouping without a visible label.
-      if (theme.id === 'dark') card.classList.add('is-section-start');
+      // Subtle section dividers in the picker. Dusk leads the muted
+      // group; Dark leads the dark group. CSS draws a thin line above
+      // each — and above the corresponding sibling in column 2 — so
+      // the rows visually separate without category headers.
+      if (theme.id === 'dusk' || theme.id === 'dark') {
+        card.classList.add('is-section-start');
+      }
 
       // Mini theme preview: page bg fills the rectangle, an inner
       // "surface tile" represents one of the favorite tiles, and a dot
