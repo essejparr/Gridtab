@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]):not([data-theme="bubblegum"]):not([data-theme="sherbet"]):not([data-theme="velvet"]):not([data-theme="olive"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -438,6 +438,54 @@
   --shadow-lg: 0 12px 32px rgba(30, 58, 95, 0.16);
 }
 
+/* Bubblegum (Pro) — pop-art pink + deep teal accent. The pink-teal
+   pairing is iconic 80s/90s graphic design (Memphis Group, Saved by
+   the Bell title cards, hotel signage in Miami). The pink is more
+   saturated than baby-pastel so it commits to its identity rather
+   than apologizing for being pink. Deep teal accent grounds the sweet
+   bg with something bracing — cools the warmth without going cold. */
+:root[data-theme="bubblegum"] {
+  --bg: #fac4d3;
+  --bg-elev: #fbcad8;
+  --surface: #fcd0db;
+  --surface-hover: #f6b8ca;
+  --border: #e8a3b8;
+  --border-strong: #cf809a;
+  --text: #3a1828;
+  --text-muted: #7a3a55;
+  --text-subtle: #a86c82;
+  --accent: #0f5f5f;
+  --accent-hover: #074545;
+  --accent-text: #fcd0db;
+  --shadow-sm: 0 1px 2px rgba(120, 30, 60, 0.08);
+  --shadow-md: 0 4px 14px rgba(120, 30, 60, 0.12);
+  --shadow-lg: 0 12px 32px rgba(120, 30, 60, 0.18);
+}
+
+/* Sherbet (Pro) — pale orange-cream + magenta accent. Ice cream truck,
+   creamsicle, palm-tree neon. The orange bg is warmer and more vivid
+   than Sunset's restrained cream-with-coral; this is full-on
+   summer-popsicle energy. The magenta accent is intentionally NOT
+   warm-orange (which would just blend in) — it's the contrasting
+   bright pink that makes the orange feel even more orange. */
+:root[data-theme="sherbet"] {
+  --bg: #ffd4b0;
+  --bg-elev: #ffd8b8;
+  --surface: #ffdcc0;
+  --surface-hover: #fcc89a;
+  --border: #f0b885;
+  --border-strong: #d99a62;
+  --text: #4a200f;
+  --text-muted: #8a4a2a;
+  --text-subtle: #b87a55;
+  --accent: #a8186a;
+  --accent-hover: #8a1058;
+  --accent-text: #ffdcc0;
+  --shadow-sm: 0 1px 2px rgba(120, 60, 30, 0.08);
+  --shadow-md: 0 4px 14px rgba(120, 60, 30, 0.12);
+  --shadow-lg: 0 12px 32px rgba(120, 60, 30, 0.18);
+}
+
 /* Dusk (Pro) — twilight, the sky 20 minutes after sunset. Mid-tone
    warm grey-purple background — the "in between" zone that's neither
    light nor dark. Surfaces step DARKER (not lighter) than the page,
@@ -535,6 +583,55 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.28);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.38);
+}
+
+/* Velvet (Pro) — saturated muted, jazz lounge, theater curtain,
+   vintage Hollywood. Mid-tone wine-burgundy bg pulls saturated where
+   other muted themes pull desaturated — the unusual move that makes
+   this the most "committed" of the muted family. Surfaces step
+   darker (consistent muted-theme language). Accent is champagne gold
+   — the warm metallic that belongs in this aesthetic. Reads as
+   decadent without being gaudy. */
+:root[data-theme="velvet"] {
+  --bg: #6e2a3a;
+  --bg-elev: #62253a;
+  --surface: #4d1a26;
+  --surface-hover: #3d141e;
+  --border: #7a3344;
+  --border-strong: #9a4458;
+  --text: #f5e8ec;
+  --text-muted: #c5a8b0;
+  --text-subtle: #8e6f78;
+  --accent: #e8c987;
+  --accent-hover: #f0d59a;
+  --accent-text: #2a1218;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Olive (Pro) — utilitarian / military / fashion-meets-function. The
+   olive-green-grey bg is the color of an M-65 field jacket or a
+   vintage Land Rover. Surfaces step darker. Accent is rust orange
+   — the warm-cool complementary that gives the theme its real
+   personality. The "I have a job to do" energy without industrial
+   coldness. */
+:root[data-theme="olive"] {
+  --bg: #5a6048;
+  --bg-elev: #525742;
+  --surface: #42473a;
+  --surface-hover: #383d31;
+  --border: #666c52;
+  --border-strong: #82886a;
+  --text: #ecede2;
+  --text-muted: #b5b8a3;
+  --text-subtle: #82856e;
+  --accent: #d97448;
+  --accent-hover: #e88858;
+  --accent-text: #2a1e10;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 * { box-sizing: border-box; }

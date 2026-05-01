@@ -56,6 +56,10 @@
       swatch: ['#f6dfd2', '#fae8de', '#e3bfae', '#5a2a48'] },
     { id: 'slate', name: 'Slate', tier: 'pro',
       swatch: ['#d8dfe5', '#e3e8ed', '#b8c2cc', '#1e3a5f'] },
+    { id: 'bubblegum', name: 'Bubblegum', tier: 'pro',
+      swatch: ['#fac4d3', '#fcd0db', '#e8a3b8', '#0f5f5f'] },
+    { id: 'sherbet', name: 'Sherbet', tier: 'pro',
+      swatch: ['#ffd4b0', '#ffdcc0', '#f0b885', '#a8186a'] },
     // Muted themes — mid-tone backgrounds between light and dark
     { id: 'dusk', name: 'Dusk', tier: 'pro',
       swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
@@ -65,6 +69,10 @@
       swatch: ['#6a6a6a', '#777777', '#525252', '#dcdcdc'] },
     { id: 'stormcloud', name: 'Stormcloud', tier: 'pro',
       swatch: ['#4d5868', '#586474', '#3a4456', '#e8d09a'] },
+    { id: 'velvet', name: 'Velvet', tier: 'pro',
+      swatch: ['#6e2a3a', '#7a3344', '#4d1a26', '#e8c987'] },
+    { id: 'olive', name: 'Olive', tier: 'pro',
+      swatch: ['#5a6048', '#666c52', '#42473a', '#d97448'] },
     // Dark themes
     { id: 'dark',   name: 'Dark',   tier: 'free',
       swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
