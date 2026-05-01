@@ -59,8 +59,12 @@
     // Dark themes
     { id: 'dark',   name: 'Dark',   tier: 'free',
       swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
+    { id: 'graphite', name: 'Graphite', tier: 'pro',
+      swatch: ['#1a1a1a', '#222222', '#363636', '#e8e8e8'] },
     { id: 'forest', name: 'Forest', tier: 'pro',
       swatch: ['#1a2820', '#243831', '#3a544a', '#d4a857'] },
+    { id: 'tobacco', name: 'Tobacco', tier: 'pro',
+      swatch: ['#1f1612', '#2a1e18', '#3d2c22', '#e8d4a8'] },
     { id: 'cobalt', name: 'Cobalt', tier: 'pro',
       swatch: ['#0a1628', '#0f1f3a', '#1f3358', '#f5d6a8'] },
     { id: 'oxide', name: 'Oxide', tier: 'pro',

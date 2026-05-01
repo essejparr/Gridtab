@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -312,6 +312,55 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.50);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.60);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.75);
+}
+
+/* Graphite (Pro) — pure neutral grey. No hue bias toward warm or cool.
+   Industrial / architectural / camera-body energy: raw aluminum, SLR
+   grip, drafting paper. The accent is near-white instead of a color —
+   maximum value contrast, zero hue contrast. Mirrors what Vellum does
+   on the light side: the design refuses color identity. The neutral
+   counterpart to Dark, which has a slight blue tint via its surface. */
+:root[data-theme="graphite"] {
+  --bg: #1a1a1a;
+  --bg-elev: #1e1e1e;
+  --surface: #222222;
+  --surface-hover: #2a2a2a;
+  --border: #363636;
+  --border-strong: #4d4d4d;
+  --text: #f0f0f0;
+  --text-muted: #9a9a9a;
+  --text-subtle: #6a6a6a;
+  --accent: #e8e8e8;
+  --accent-hover: #ffffff;
+  --accent-text: #1a1a1a;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.50);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65);
+}
+
+/* Tobacco (Pro) — aged leather, library at midnight, dark wood and
+   warm lamp light. Background is a deep brown-black (warm undertone,
+   no green or red bias) with surfaces stepping up through deep
+   brown shades. Accent is a soft cream-gold like aged paper under
+   candlelight — neither saturated honey (Forest) nor energetic orange
+   (Ember). The aesthetic: a study lined with old books at night,
+   refined and aged rather than fiery or organic. */
+:root[data-theme="tobacco"] {
+  --bg: #1f1612;
+  --bg-elev: #251a15;
+  --surface: #2a1e18;
+  --surface-hover: #34251d;
+  --border: #3d2c22;
+  --border-strong: #5a4030;
+  --text: #f0e6d6;
+  --text-muted: #b8a890;
+  --text-subtle: #7d6b58;
+  --accent: #e8d4a8;
+  --accent-hover: #f0e0bc;
+  --accent-text: #1f1612;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
 
 /* Vellum (Pro) — monastic minimalism, manuscript-skin paper, ink-on-
