@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -487,6 +487,54 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.25);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* Concrete (Pro) — pure neutral mid-grey, cured concrete or aged
+   steel. Industrial, no nonsense, present without performing.
+   Surfaces step DARKER than the page (consistent with Dusk and
+   Sienna's muted-theme design language). Accent is desaturated
+   off-white — not a color, just value contrast. The neutral muted
+   counterpart to Graphite's neutral dark and Light's neutral light. */
+:root[data-theme="concrete"] {
+  --bg: #6a6a6a;
+  --bg-elev: #606060;
+  --surface: #525252;
+  --surface-hover: #464646;
+  --border: #777777;
+  --border-strong: #969696;
+  --text: #f0f0f0;
+  --text-muted: #c5c5c5;
+  --text-subtle: #909090;
+  --accent: #dcdcdc;
+  --accent-hover: #ececec;
+  --accent-text: #2a2a2a;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.30);
+}
+
+/* Stormcloud (Pro) — overcast sky just before rain. Mid-tone deep
+   blue-grey background, distinctly cool (where Dusk's purple read
+   warmer than expected). Surfaces step darker with a bluer tone —
+   the deepening of the storm. Accent is a soft pale gold, the way
+   sunlight breaks through stormy clouds for a moment. The dramatic
+   counterpart to Dusk's melancholy and Sienna's earthy warmth. */
+:root[data-theme="stormcloud"] {
+  --bg: #4d5868;
+  --bg-elev: #44505f;
+  --surface: #3a4456;
+  --surface-hover: #303a4a;
+  --border: #586474;
+  --border-strong: #7a8696;
+  --text: #ebeef4;
+  --text-muted: #b5becc;
+  --text-subtle: #7d8898;
+  --accent: #e8d09a;
+  --accent-hover: #f0dcae;
+  --accent-text: #2a2a1e;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.38);
 }
 
 * { box-sizing: border-box; }

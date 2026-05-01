@@ -61,6 +61,10 @@
       swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
     { id: 'sienna', name: 'Sienna', tier: 'pro',
       swatch: ['#7a5a48', '#8a6a55', '#5a4030', '#f0e0c8'] },
+    { id: 'concrete', name: 'Concrete', tier: 'pro',
+      swatch: ['#6a6a6a', '#777777', '#525252', '#dcdcdc'] },
+    { id: 'stormcloud', name: 'Stormcloud', tier: 'pro',
+      swatch: ['#4d5868', '#586474', '#3a4456', '#e8d09a'] },
     // Dark themes
     { id: 'dark',   name: 'Dark',   tier: 'free',
       swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
@@ -2043,6 +2047,24 @@
     if (!colorMenu.hidden) { closeColorMenu(); return; }
     if (!modal.hidden) closeModal();
     else if (!settingsModal.hidden) closeSettingsModal();
+  });
+
+  // "/" focuses the search bar — the Twitter/GitHub convention. Skipped
+  // when the user is already typing in an input (so they can type a
+  // literal slash) or when any modal/popover is open.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/') return;
+    const target = e.target;
+    const isTyping = target instanceof HTMLElement &&
+      (target.tagName === 'INPUT' ||
+       target.tagName === 'TEXTAREA' ||
+       target.isContentEditable);
+    if (isTyping) return;
+    if (!modal.hidden || !settingsModal.hidden) return;
+    if (!enginePopover.hidden || !colorMenu.hidden) return;
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
   });
 
   // Live-sync if storage changes in another tab.
