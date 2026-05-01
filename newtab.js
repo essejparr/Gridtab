@@ -52,6 +52,10 @@
       swatch: ['#e8e2d6', '#f5f0e4', '#cfc6b3', '#3d6e6e'] },
     { id: 'vellum', name: 'Vellum', tier: 'pro',
       swatch: ['#f0ece4', '#f7f3ec', '#d6cfc0', '#1a1a1a'] },
+    { id: 'linen', name: 'Linen', tier: 'pro',
+      swatch: ['#f6dfd2', '#fae8de', '#e3bfae', '#5a2a48'] },
+    { id: 'slate', name: 'Slate', tier: 'pro',
+      swatch: ['#d8dfe5', '#e3e8ed', '#b8c2cc', '#1e3a5f'] },
     // Dark themes
     { id: 'dark',   name: 'Dark',   tier: 'free',
       swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },

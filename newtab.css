@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -336,6 +336,57 @@
   --shadow-sm: 0 1px 2px rgba(40, 35, 25, 0.06);
   --shadow-md: 0 4px 12px rgba(40, 35, 25, 0.08);
   --shadow-lg: 0 12px 32px rgba(40, 35, 25, 0.14);
+}
+
+/* Linen (Pro) — soft warm peach-pink, like morning light through a
+   curtain or the inside of a paper lantern. Deliberately a colored
+   background, not a tinted white: the page itself reads as warm,
+   not just decorated. The accent is deep aubergine — a complementary
+   cool-purple that grounds the warmth and gives the theme harmonic
+   weight. Distinct from Sunset (which is cream pulled toward yellow
+   with a coral accent) by being pulled toward pink with a purple
+   accent that's intentionally NOT in the same warm-orange family. */
+:root[data-theme="linen"] {
+  --bg: #f6dfd2;
+  --bg-elev: #f8e5d9;
+  --surface: #fae8de;
+  --surface-hover: #f0d3c2;
+  --border: #e3bfae;
+  --border-strong: #c89d8a;
+  --text: #3a1f30;
+  --text-muted: #6e4d62;
+  --text-subtle: #9a7d8e;
+  --accent: #5a2a48;
+  --accent-hover: #43203a;
+  --accent-text: #fae8de;
+  --shadow-sm: 0 1px 2px rgba(90, 42, 72, 0.07);
+  --shadow-md: 0 4px 14px rgba(90, 42, 72, 0.10);
+  --shadow-lg: 0 12px 32px rgba(90, 42, 72, 0.16);
+}
+
+/* Slate (Pro) — soft cool blue-grey, like sea fog at dawn or worn
+   denim. NOT light blue (too candy) or powder blue (too decorative)
+   — a desaturated grey-blue that has actual blue character without
+   being aggressive. The accent is deep navy from the same family,
+   maximally darker like ink on grey paper. Reads as calm, intelligent,
+   functional. The daytime counterpart to Cobalt's deep night-sky
+   energy. */
+:root[data-theme="slate"] {
+  --bg: #d8dfe5;
+  --bg-elev: #dfe5ea;
+  --surface: #e3e8ed;
+  --surface-hover: #cdd5dd;
+  --border: #b8c2cc;
+  --border-strong: #94a2b0;
+  --text: #1a2638;
+  --text-muted: #4a5868;
+  --text-subtle: #768498;
+  --accent: #1e3a5f;
+  --accent-hover: #142a47;
+  --accent-text: #e3e8ed;
+  --shadow-sm: 0 1px 2px rgba(30, 58, 95, 0.07);
+  --shadow-md: 0 4px 14px rgba(30, 58, 95, 0.10);
+  --shadow-lg: 0 12px 32px rgba(30, 58, 95, 0.16);
 }
 
 * { box-sizing: border-box; }
