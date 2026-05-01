@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="mist"]):not([data-theme="dusk"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -436,6 +436,56 @@
   --shadow-sm: 0 1px 2px rgba(30, 58, 95, 0.07);
   --shadow-md: 0 4px 14px rgba(30, 58, 95, 0.10);
   --shadow-lg: 0 12px 32px rgba(30, 58, 95, 0.16);
+}
+
+/* Mist (Pro) — pale icy blue, fog over water in early winter. More
+   committed to blue than Slate (which is closer to a blue-grey),
+   but kept very pale so the room reads as cool-lit, not chilled.
+   Accent is deep teal — same cool family, dramatically darker, like
+   pine needles seen through fog. The cool sister to Linen's warm
+   colored-light slot. */
+:root[data-theme="mist"] {
+  --bg: #dce8ed;
+  --bg-elev: #e2ecf0;
+  --surface: #e6eef2;
+  --surface-hover: #cfdde3;
+  --border: #b8cdd5;
+  --border-strong: #92aeb9;
+  --text: #1a2c30;
+  --text-muted: #4d6066;
+  --text-subtle: #788c92;
+  --accent: #1a4f5a;
+  --accent-hover: #103c45;
+  --accent-text: #e6eef2;
+  --shadow-sm: 0 1px 2px rgba(20, 60, 70, 0.07);
+  --shadow-md: 0 4px 14px rgba(20, 60, 70, 0.10);
+  --shadow-lg: 0 12px 32px rgba(20, 60, 70, 0.16);
+}
+
+/* Dusk (Pro) — twilight, the sky 20 minutes after sunset. Mid-tone
+   warm grey-purple background — the "in between" zone that's neither
+   light nor dark. Surfaces step DARKER (not lighter) than the page,
+   making each tile feel like a window into shadow against the lit
+   sky. Light text reads against the bg, also reads against the
+   slightly darker surfaces because the contrast direction is consistent.
+   Accent is a soft dusty rose — the warm pink of clouds at twilight,
+   melancholic without being sad. */
+:root[data-theme="dusk"] {
+  --bg: #5e525c;
+  --bg-elev: #564a54;
+  --surface: #473d44;
+  --surface-hover: #3d343a;
+  --border: #6a5d68;
+  --border-strong: #8a7c87;
+  --text: #f5ebee;
+  --text-muted: #c5b8bf;
+  --text-subtle: #8e818a;
+  --accent: #d8b8c5;
+  --accent-hover: #e3c8d2;
+  --accent-text: #3a2d36;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 * { box-sizing: border-box; }

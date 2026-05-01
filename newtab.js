@@ -56,9 +56,13 @@
       swatch: ['#f6dfd2', '#fae8de', '#e3bfae', '#5a2a48'] },
     { id: 'slate', name: 'Slate', tier: 'pro',
       swatch: ['#d8dfe5', '#e3e8ed', '#b8c2cc', '#1e3a5f'] },
+    { id: 'mist', name: 'Mist', tier: 'pro',
+      swatch: ['#dce8ed', '#e6eef2', '#b8cdd5', '#1a4f5a'] },
     // Dark themes
     { id: 'dark',   name: 'Dark',   tier: 'free',
       swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
+    { id: 'dusk', name: 'Dusk', tier: 'pro',
+      swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
     { id: 'graphite', name: 'Graphite', tier: 'pro',
       swatch: ['#1a1a1a', '#222222', '#363636', '#e8e8e8'] },
     { id: 'forest', name: 'Forest', tier: 'pro',
