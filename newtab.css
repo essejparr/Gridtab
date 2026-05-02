@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]):not([data-theme="bubblegum"]):not([data-theme="sherbet"]):not([data-theme="velvet"]):not([data-theme="olive"]):not([data-theme="mint"]):not([data-theme="lavender"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]):not([data-theme="bubblegum"]):not([data-theme="sherbet"]):not([data-theme="velvet"]):not([data-theme="olive"]):not([data-theme="mint"]):not([data-theme="lavender"]):not([data-theme="bruise"]):not([data-theme="citrus"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -681,6 +681,56 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.25);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* Bruise (Pro) — saturated muted purple-blue with electric yellow
+   accent. The name is intentional: "bruise" instantly evokes the
+   specific deep purple-blue color/feeling, melancholic but vivid.
+   Late-night neon sign, 70s vinyl record sleeves, the kind of
+   sadness made loud. The yellow accent is the maximum contrast that
+   feels live against the blue-violet — black-on-yellow is a high-
+   contrast pairing borrowed from caution tape and warning signage,
+   pulled here into something more melancholy than alarmed. */
+:root[data-theme="bruise"] {
+  --bg: #3d2a52;
+  --bg-elev: #45305e;
+  --surface: #291a3d;
+  --surface-hover: #1f1230;
+  --border: #473059;
+  --border-strong: #654080;
+  --text: #ece0f5;
+  --text-muted: #b09cc8;
+  --text-subtle: #7a6890;
+  --accent: #f0d83c;
+  --accent-hover: #f8e25c;
+  --accent-text: #1a1208;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.50);
+}
+
+/* Citrus (Pro) — saturated muted yellow-orange with electric magenta
+   accent. Aged saffron, persimmon, marigold wallpaper from a 70s
+   motel. The warm cousin to Velvet's burgundy in the saturated-muted
+   family. The magenta accent is the contrasting pop that keeps the
+   warm bg from feeling sleepy — yellow-orange + magenta is the
+   complementary pair that always reads as "this room is alive." */
+:root[data-theme="citrus"] {
+  --bg: #7a5a1f;
+  --bg-elev: #856325;
+  --surface: #5d4218;
+  --surface-hover: #4d3613;
+  --border: #8a6826;
+  --border-strong: #ad8632;
+  --text: #f5ead0;
+  --text-muted: #c8b58a;
+  --text-subtle: #927e58;
+  --accent: #e8348a;
+  --accent-hover: #d62278;
+  --accent-text: #ffe8f0;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.38);
 }
 
 * { box-sizing: border-box; }

@@ -31,53 +31,60 @@
    * used to render the picker thumbnail (no need to actually apply the
    * theme to read its colors).
    */
-  // Theme registry. Order matters for the picker UI: Auto is always
-  // first (the "follow OS" default), then all light themes grouped,
-  // then all dark themes grouped. Within each group, free themes come
-  // before pro themes so the most accessible options sit at the top.
+  // Theme registry. Order matters for the picker UI — three groups
+  // (Light, Muted, Dark) appear in luminance order top to bottom.
+  // Within each group, themes are ordered by temperature: warm first,
+  // then neutral, then cool. Free themes anchor each group.
   const THEMES = [
     // Auto (sits alone)
     { id: 'auto',   name: 'Auto',   tier: 'free',
       // Auto doesn't have a single set of colors — it follows the OS.
       // Show the light-mode preview as a reasonable representation.
       swatch: ['#f4f5f7', '#ffffff', '#e5e7eb', '#2563eb'] },
-    // Light themes
+
+    // Light themes — warm restrained → warm hype → cool
     { id: 'light',  name: 'Light',  tier: 'free',
       swatch: ['#f4f5f7', '#ffffff', '#e5e7eb', '#2563eb'] },
     { id: 'sunset', name: 'Sunset', tier: 'pro',
       swatch: ['#fbf2e7', '#ffffff', '#f0d9c0', '#e85d3a'] },
-    { id: 'marble', name: 'Marble', tier: 'pro',
-      swatch: ['#ebe9e4', '#f4f3ef', '#c9c5bd', '#5a3f1f'] },
     { id: 'polaroid', name: 'Polaroid', tier: 'pro',
       swatch: ['#e8e2d6', '#f5f0e4', '#cfc6b3', '#3d6e6e'] },
     { id: 'vellum', name: 'Vellum', tier: 'pro',
       swatch: ['#f0ece4', '#f7f3ec', '#d6cfc0', '#1a1a1a'] },
     { id: 'linen', name: 'Linen', tier: 'pro',
       swatch: ['#f6dfd2', '#fae8de', '#e3bfae', '#5a2a48'] },
-    { id: 'slate', name: 'Slate', tier: 'pro',
-      swatch: ['#d8dfe5', '#e3e8ed', '#b8c2cc', '#1e3a5f'] },
-    { id: 'bubblegum', name: 'Bubblegum', tier: 'pro',
-      swatch: ['#fac4d3', '#fcd0db', '#e8a3b8', '#0f5f5f'] },
     { id: 'sherbet', name: 'Sherbet', tier: 'pro',
       swatch: ['#ffd4b0', '#ffdcc0', '#f0b885', '#a8186a'] },
+    { id: 'bubblegum', name: 'Bubblegum', tier: 'pro',
+      swatch: ['#fac4d3', '#fcd0db', '#e8a3b8', '#0f5f5f'] },
+    { id: 'marble', name: 'Marble', tier: 'pro',
+      swatch: ['#ebe9e4', '#f4f3ef', '#c9c5bd', '#5a3f1f'] },
+    { id: 'slate', name: 'Slate', tier: 'pro',
+      swatch: ['#d8dfe5', '#e3e8ed', '#b8c2cc', '#1e3a5f'] },
     { id: 'mint', name: 'Mint', tier: 'pro',
       swatch: ['#c8e8d8', '#d2eddf', '#a3cdb8', '#e8456a'] },
     { id: 'lavender', name: 'Lavender', tier: 'pro',
       swatch: ['#dccfee', '#e3d6f2', '#bca8d8', '#a8a818'] },
-    // Muted themes — mid-tone backgrounds between light and dark
-    { id: 'dusk', name: 'Dusk', tier: 'pro',
-      swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
+
+    // Muted themes — warm → neutral → cool
     { id: 'sienna', name: 'Sienna', tier: 'pro',
       swatch: ['#7a5a48', '#8a6a55', '#5a4030', '#f0e0c8'] },
-    { id: 'concrete', name: 'Concrete', tier: 'pro',
-      swatch: ['#6a6a6a', '#777777', '#525252', '#dcdcdc'] },
-    { id: 'stormcloud', name: 'Stormcloud', tier: 'pro',
-      swatch: ['#4d5868', '#586474', '#3a4456', '#e8d09a'] },
+    { id: 'citrus', name: 'Citrus', tier: 'pro',
+      swatch: ['#7a5a1f', '#8a6826', '#5d4218', '#e8348a'] },
     { id: 'velvet', name: 'Velvet', tier: 'pro',
       swatch: ['#6e2a3a', '#7a3344', '#4d1a26', '#e8c987'] },
+    { id: 'concrete', name: 'Concrete', tier: 'pro',
+      swatch: ['#6a6a6a', '#777777', '#525252', '#dcdcdc'] },
     { id: 'olive', name: 'Olive', tier: 'pro',
       swatch: ['#5a6048', '#666c52', '#42473a', '#d97448'] },
-    // Dark themes
+    { id: 'dusk', name: 'Dusk', tier: 'pro',
+      swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
+    { id: 'bruise', name: 'Bruise', tier: 'pro',
+      swatch: ['#3d2a52', '#473059', '#291a3d', '#f0d83c'] },
+    { id: 'stormcloud', name: 'Stormcloud', tier: 'pro',
+      swatch: ['#4d5868', '#586474', '#3a4456', '#e8d09a'] },
+
+    // Dark themes — neutral → warm → cool → hype
     { id: 'dark',   name: 'Dark',   tier: 'free',
       swatch: ['#0f1115', '#1c2030', '#2a2f3d', '#3b82f6'] },
     { id: 'graphite', name: 'Graphite', tier: 'pro',
@@ -86,6 +93,10 @@
       swatch: ['#1a2820', '#243831', '#3a544a', '#d4a857'] },
     { id: 'tobacco', name: 'Tobacco', tier: 'pro',
       swatch: ['#1f1612', '#2a1e18', '#3d2c22', '#e8d4a8'] },
+    { id: 'ember', name: 'Ember', tier: 'pro',
+      swatch: ['#1a0d0a', '#241410', '#3d201a', '#ff6a2c'] },
+    { id: 'slab', name: 'Slab', tier: 'pro',
+      swatch: ['#0a0a0a', '#161616', '#2a2a2a', '#a01818'] },
     { id: 'cobalt', name: 'Cobalt', tier: 'pro',
       swatch: ['#0a1628', '#0f1f3a', '#1f3358', '#f5d6a8'] },
     { id: 'oxide', name: 'Oxide', tier: 'pro',
@@ -94,10 +105,6 @@
       swatch: ['#0e0524', '#1a0e3d', '#2d1a5c', '#ff2e8a'] },
     { id: 'neon', name: 'Neon', tier: 'pro',
       swatch: ['#04141a', '#072028', '#0d3a44', '#22f5e3'] },
-    { id: 'ember', name: 'Ember', tier: 'pro',
-      swatch: ['#1a0d0a', '#241410', '#3d201a', '#ff6a2c'] },
-    { id: 'slab', name: 'Slab', tier: 'pro',
-      swatch: ['#0a0a0a', '#161616', '#2a2a2a', '#a01818'] },
   ];
 
   /**
@@ -435,11 +442,11 @@
       const locked = theme.tier === 'pro' && !isThemeAvailable(theme.id, settings);
       if (locked) card.classList.add('is-locked');
 
-      // Subtle section dividers in the picker. Dusk leads the muted
+      // Subtle section dividers in the picker. Sienna leads the muted
       // group; Dark leads the dark group. CSS draws a thin line above
       // each — and above the corresponding sibling in column 2 — so
       // the rows visually separate without category headers.
-      if (theme.id === 'dusk' || theme.id === 'dark') {
+      if (theme.id === 'sienna' || theme.id === 'dark') {
         card.classList.add('is-section-start');
       }
 
@@ -972,9 +979,16 @@
         const draggedFromFolder = !!(draggedLoc && draggedLoc.parent);
         const rect = tile.getBoundingClientRect();
         const offsetX = e.clientX - rect.left;
+        // Folders use a wide center zone (25%–75%) for "add to folder",
+        // not the tight 36%–64% zone used for favorite-on-favorite
+        // merge. Reasoning: the folder is a deliberate target — the
+        // user has to drag onto a visibly distinct tile — so we don't
+        // need accident-prevention there. Reorder-around-folder slivers
+        // sit at the outer 25% of each side, still easy to hit by
+        // aiming at the gap between tiles.
         const inAddZone = !draggedFromFolder
-                       && offsetX > rect.width * 0.36
-                       && offsetX < rect.width * 0.64;
+                       && offsetX > rect.width * 0.25
+                       && offsetX < rect.width * 0.75;
 
         if (inAddZone) {
           tile.classList.add('is-add-target');
@@ -1091,10 +1105,27 @@
       e.dataTransfer.dropEffect = 'move';
       if (tile.classList.contains('is-dragging')) return;
 
-      // Tiles inside an open folder accept drops anywhere — no merge
-      // gymnastics. Just show a single drop highlight.
+      // Tiles inside an open folder. Behavior splits by relationship:
+      //  - Reordering within THIS folder (dragged is a sibling) — show
+      //    before/after insertion bars, same as top-level reorder.
+      //  - Adding from outside (top level, or different folder) — show
+      //    a single ring highlight; the drop adds to this folder.
       if (ctx && ctx.folderId) {
-        tile.classList.add('is-drop-target');
+        const draggedLoc = currentDragId ? findItemById(currentDragId) : null;
+        const draggedSibling = draggedLoc
+          && draggedLoc.parent
+          && draggedLoc.parent.id === ctx.folderId;
+
+        if (draggedSibling) {
+          const rect = tile.getBoundingClientRect();
+          const onLeftHalf = (e.clientX - rect.left) < rect.width * 0.5;
+          tile.classList.toggle('is-drop-before', onLeftHalf);
+          tile.classList.toggle('is-drop-after', !onLeftHalf);
+          tile.classList.remove('is-drop-target');
+        } else {
+          tile.classList.add('is-drop-target');
+          tile.classList.remove('is-drop-before', 'is-drop-after');
+        }
         return;
       }
 
