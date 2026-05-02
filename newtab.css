@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]):not([data-theme="bubblegum"]):not([data-theme="sherbet"]):not([data-theme="velvet"]):not([data-theme="olive"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]):not([data-theme="bubblegum"]):not([data-theme="sherbet"]):not([data-theme="velvet"]):not([data-theme="olive"]):not([data-theme="mint"]):not([data-theme="lavender"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -484,6 +484,55 @@
   --shadow-sm: 0 1px 2px rgba(120, 60, 30, 0.08);
   --shadow-md: 0 4px 14px rgba(120, 60, 30, 0.12);
   --shadow-lg: 0 12px 32px rgba(120, 60, 30, 0.18);
+}
+
+/* Mint (Pro) — pale aqua-mint + vivid coral accent. The mint-coral
+   pairing is fashion-week / streetwear / spa-meets-sneaker-drop.
+   Distinctly cool background where Bubblegum and Sherbet are warm —
+   fills the cool side of the hype-light slot. The vivid coral is
+   the warm pop that makes the mint feel cooler and crisper by
+   contrast. Reads as "fresh" without being twee. */
+:root[data-theme="mint"] {
+  --bg: #c8e8d8;
+  --bg-elev: #d2eddf;
+  --surface: #d2eddf;
+  --surface-hover: #b8dfca;
+  --border: #a3cdb8;
+  --border-strong: #7fb098;
+  --text: #0f3325;
+  --text-muted: #3f6655;
+  --text-subtle: #6f917f;
+  --accent: #e8456a;
+  --accent-hover: #cf2f54;
+  --accent-text: #fff5f5;
+  --shadow-sm: 0 1px 2px rgba(15, 80, 50, 0.08);
+  --shadow-md: 0 4px 14px rgba(15, 80, 50, 0.12);
+  --shadow-lg: 0 12px 32px rgba(15, 80, 50, 0.18);
+}
+
+/* Lavender (Pro) — pale lavender + chartreuse-gold accent. The
+   yellow-purple contrast is one of the most stable in art history
+   (Van Gogh, Klimt) but rare in UI — most apps avoid lavender
+   backgrounds entirely. The chartreuse accent is deep enough to
+   feel like aged brass against the lavender, not a fluorescent
+   marker. Reads as Easter, but make it streetwear. The unusual cool
+   companion to Mint. */
+:root[data-theme="lavender"] {
+  --bg: #dccfee;
+  --bg-elev: #e3d6f2;
+  --surface: #e3d6f2;
+  --surface-hover: #cdbde0;
+  --border: #bca8d8;
+  --border-strong: #9881b5;
+  --text: #2a1a45;
+  --text-muted: #5a4775;
+  --text-subtle: #897ba0;
+  --accent: #a8a818;
+  --accent-hover: #8e8e10;
+  --accent-text: #f5f5d8;
+  --shadow-sm: 0 1px 2px rgba(60, 40, 100, 0.08);
+  --shadow-md: 0 4px 14px rgba(60, 40, 100, 0.12);
+  --shadow-lg: 0 12px 32px rgba(60, 40, 100, 0.18);
 }
 
 /* Dusk (Pro) — twilight, the sky 20 minutes after sunset. Mid-tone

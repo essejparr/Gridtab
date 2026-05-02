@@ -60,6 +60,10 @@
       swatch: ['#fac4d3', '#fcd0db', '#e8a3b8', '#0f5f5f'] },
     { id: 'sherbet', name: 'Sherbet', tier: 'pro',
       swatch: ['#ffd4b0', '#ffdcc0', '#f0b885', '#a8186a'] },
+    { id: 'mint', name: 'Mint', tier: 'pro',
+      swatch: ['#c8e8d8', '#d2eddf', '#a3cdb8', '#e8456a'] },
+    { id: 'lavender', name: 'Lavender', tier: 'pro',
+      swatch: ['#dccfee', '#e3d6f2', '#bca8d8', '#a8a818'] },
     // Muted themes — mid-tone backgrounds between light and dark
     { id: 'dusk', name: 'Dusk', tier: 'pro',
       swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
