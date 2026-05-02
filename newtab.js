@@ -1105,27 +1105,18 @@
       e.dataTransfer.dropEffect = 'move';
       if (tile.classList.contains('is-dragging')) return;
 
-      // Tiles inside an open folder. Behavior splits by relationship:
-      //  - Reordering within THIS folder (dragged is a sibling) — show
-      //    before/after insertion bars, same as top-level reorder.
-      //  - Adding from outside (top level, or different folder) — show
-      //    a single ring highlight; the drop adds to this folder.
+      // Tiles inside an open folder. All drops on a folder-child show
+      // before/after insertion bars — the user can pick the exact slot
+      // whether they're reordering a sibling or adding from outside.
+      // The colored folder ring around the children already signals
+      // "this is folder content," so the bars unambiguously mean "drop
+      // lands here in the folder."
       if (ctx && ctx.folderId) {
-        const draggedLoc = currentDragId ? findItemById(currentDragId) : null;
-        const draggedSibling = draggedLoc
-          && draggedLoc.parent
-          && draggedLoc.parent.id === ctx.folderId;
-
-        if (draggedSibling) {
-          const rect = tile.getBoundingClientRect();
-          const onLeftHalf = (e.clientX - rect.left) < rect.width * 0.5;
-          tile.classList.toggle('is-drop-before', onLeftHalf);
-          tile.classList.toggle('is-drop-after', !onLeftHalf);
-          tile.classList.remove('is-drop-target');
-        } else {
-          tile.classList.add('is-drop-target');
-          tile.classList.remove('is-drop-before', 'is-drop-after');
-        }
+        const rect = tile.getBoundingClientRect();
+        const onLeftHalf = (e.clientX - rect.left) < rect.width * 0.5;
+        tile.classList.toggle('is-drop-before', onLeftHalf);
+        tile.classList.toggle('is-drop-after', !onLeftHalf);
+        tile.classList.remove('is-drop-target');
         return;
       }
 
@@ -1228,7 +1219,19 @@
           arr.splice(insertAt, 0, moved);
           mutated = true;
         } else {
-          mutated = addToFolder(draggedId, ctx.folderId, targetId);
+          // Cross-folder add. Insert before targetId for "before" side,
+          // or before the next sibling for "after" side. If target is
+          // the last child and side is "after," beforeId is null and
+          // addToFolder falls through to "push to end."
+          let beforeId = targetId;
+          if (dropSide === 'after') {
+            const arr = folder.items || [];
+            const idx = arr.findIndex((c) => c.id === targetId);
+            beforeId = (idx >= 0 && idx < arr.length - 1)
+              ? arr[idx + 1].id
+              : null;
+          }
+          mutated = addToFolder(draggedId, ctx.folderId, beforeId);
         }
       }
       // Case B: this tile is at the top level. Three possibilities:
