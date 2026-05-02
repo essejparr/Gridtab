@@ -225,6 +225,7 @@
   const resetBtn       = document.getElementById('resetSettingsBtn');
   const expandAllBtn   = document.getElementById('expandAllBtn');
   const collapseAllBtn = document.getElementById('collapseAllBtn');
+  const clearAllBtn    = document.getElementById('clearAllBtn');
   // Split add button + color picker.
   const addBtnWrap     = document.querySelector('.add-btn-wrap');
   const addBtnCaret    = document.getElementById('addBtnCaret');
@@ -1992,6 +1993,50 @@
 
   expandAllBtn.addEventListener('click', () => setAllFoldersOpen(true));
   collapseAllBtn.addEventListener('click', () => setAllFoldersOpen(false));
+
+  /**
+   * Wipe all favorites and folders. Destructive and irreversible, so
+   * the confirmation message names exact counts to prevent accidents.
+   * Empty case (nothing to delete) just shows a brief notice rather
+   * than a confirmation that would feel pointless.
+   */
+  clearAllBtn.addEventListener('click', async () => {
+    let folderCount = 0;
+    let favoriteCount = 0;
+    for (const item of favorites) {
+      if (kindOf(item) === 'folder') {
+        folderCount++;
+        favoriteCount += (item.items?.length || 0);
+      } else {
+        favoriteCount++;
+      }
+    }
+
+    if (folderCount === 0 && favoriteCount === 0) {
+      alert('Nothing to clear — your dashboard is already empty.');
+      return;
+    }
+
+    const parts = [];
+    if (favoriteCount > 0) {
+      parts.push(`${favoriteCount} favorite${favoriteCount === 1 ? '' : 's'}`);
+    }
+    if (folderCount > 0) {
+      parts.push(`${folderCount} folder${folderCount === 1 ? '' : 's'}`);
+    }
+    const message = `Delete all ${parts.join(' and ')}? This cannot be undone.`;
+    if (!confirm(message)) return;
+
+    const previous = JSON.parse(JSON.stringify(favorites));
+    favorites = [];
+    const result = await saveFavorites(favorites);
+    if (!result.ok) {
+      favorites = previous;
+      alert('Could not clear favorites. Please try again.');
+      return;
+    }
+    render();
+  });
 
   settingsBtn.addEventListener('click', openSettingsModal);
 
