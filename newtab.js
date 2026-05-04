@@ -105,10 +105,14 @@
       swatch: ['#0a1628', '#0f1f3a', '#1f3358', '#f5d6a8'] },
     { id: 'oxide', name: 'Oxide', tier: 'pro',
       swatch: ['#0c1f24', '#102a30', '#1a3d44', '#d97448'] },
+    { id: 'inferno', name: 'Inferno', tier: 'pro',
+      swatch: ['#0a0000', '#180404', '#280808', '#ff1828'] },
     { id: 'synthwave', name: 'Synthwave', tier: 'pro',
       swatch: ['#0e0524', '#1a0e3d', '#2d1a5c', '#ff2e8a'] },
     { id: 'neon', name: 'Neon', tier: 'pro',
       swatch: ['#04141a', '#072028', '#0d3a44', '#22f5e3'] },
+    { id: 'acid', name: 'Acid', tier: 'pro',
+      swatch: ['#050a04', '#0a1408', '#101e0c', '#9bff1a'] },
   ];
 
   /**

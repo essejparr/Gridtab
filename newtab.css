@@ -36,7 +36,7 @@
 /* Dark theme — applied either when the OS prefers dark (no manual setting)
    or when data-theme="dark" is set explicitly on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]):not([data-theme="bubblegum"]):not([data-theme="sherbet"]):not([data-theme="velvet"]):not([data-theme="olive"]):not([data-theme="mint"]):not([data-theme="lavender"]):not([data-theme="bruise"]):not([data-theme="citrus"]):not([data-theme="heather"]):not([data-theme="patina"]) {
+  :root:not([data-theme="light"]):not([data-theme="sunset"]):not([data-theme="forest"]):not([data-theme="synthwave"]):not([data-theme="marble"]):not([data-theme="cobalt"]):not([data-theme="neon"]):not([data-theme="polaroid"]):not([data-theme="ember"]):not([data-theme="oxide"]):not([data-theme="slab"]):not([data-theme="vellum"]):not([data-theme="linen"]):not([data-theme="slate"]):not([data-theme="graphite"]):not([data-theme="tobacco"]):not([data-theme="dusk"]):not([data-theme="sienna"]):not([data-theme="concrete"]):not([data-theme="stormcloud"]):not([data-theme="bubblegum"]):not([data-theme="sherbet"]):not([data-theme="velvet"]):not([data-theme="olive"]):not([data-theme="mint"]):not([data-theme="lavender"]):not([data-theme="bruise"]):not([data-theme="citrus"]):not([data-theme="heather"]):not([data-theme="patina"]):not([data-theme="inferno"]):not([data-theme="acid"]) {
     --bg: #0f1115;
     --bg-elev: #161922;
     --surface: #1c2030;
@@ -212,6 +212,56 @@
   --shadow-sm: 0 1px 2px rgba(34, 245, 227, 0.12);
   --shadow-md: 0 4px 16px rgba(34, 245, 227, 0.18);
   --shadow-lg: 0 12px 36px rgba(0, 200, 200, 0.32);
+}
+
+/* Inferno (Pro) — saturated horror red, theatrical and committed.
+   Metal album covers, Suspiria, Hammer horror posters. Distinct from
+   Slab (muted industrial red) and Ember (orange-fire) by being pure
+   blood-red on near-black. The bg has a faint red undertone (not pure
+   black) so the whole room reads as lit by red — like emergency
+   lighting, dark room, theater curtain. Tinted shadows in deep red
+   reinforce the immersion. */
+:root[data-theme="inferno"] {
+  --bg: #0a0000;
+  --bg-elev: #120202;
+  --surface: #180404;
+  --surface-hover: #220606;
+  --border: #280808;
+  --border-strong: #4a1010;
+  --text: #f5e0e0;
+  --text-muted: #a86060;
+  --text-subtle: #6e3030;
+  --accent: #ff1828;
+  --accent-hover: #ff3848;
+  --accent-text: #1a0000;
+  --shadow-sm: 0 1px 2px rgba(180, 0, 0, 0.20);
+  --shadow-md: 0 4px 16px rgba(180, 0, 0, 0.28);
+  --shadow-lg: 0 12px 36px rgba(140, 0, 0, 0.45);
+}
+
+/* Acid (Pro) — 90s rave / acid house / glowstick energy. Pure black
+   bg with electric green accent — the signature green of smiley face
+   logos, vintage Atari arcade screens, glow paint. Distinct from
+   Neon's cyan because acid green is yellower and reads as 90s rave
+   rather than cyberpunk. Background has the faintest green undertone
+   so the room reads as glow-lit, not just generic dark. Tinted green
+   shadows complete the immersion. */
+:root[data-theme="acid"] {
+  --bg: #050a04;
+  --bg-elev: #081008;
+  --surface: #0a1408;
+  --surface-hover: #101e0c;
+  --border: #101e0c;
+  --border-strong: #1f3814;
+  --text: #e0f5d8;
+  --text-muted: #6da068;
+  --text-subtle: #486c44;
+  --accent: #9bff1a;
+  --accent-hover: #b3ff45;
+  --accent-text: #0a1404;
+  --shadow-sm: 0 1px 2px rgba(120, 200, 30, 0.15);
+  --shadow-md: 0 4px 16px rgba(120, 200, 30, 0.22);
+  --shadow-lg: 0 12px 36px rgba(80, 160, 20, 0.40);
 }
 
 /* Polaroid (Pro) — analog photography, end-of-summer film roll. The
