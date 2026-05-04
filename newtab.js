@@ -69,6 +69,8 @@
     // Muted themes — warm → neutral → cool
     { id: 'sienna', name: 'Sienna', tier: 'pro',
       swatch: ['#7a5a48', '#8a6a55', '#5a4030', '#f0e0c8'] },
+    { id: 'heather', name: 'Heather', tier: 'pro',
+      swatch: ['#8a5a62', '#956570', '#6e424a', '#3d5d2e'] },
     { id: 'citrus', name: 'Citrus', tier: 'pro',
       swatch: ['#7a5a1f', '#8a6826', '#5d4218', '#e8348a'] },
     { id: 'velvet', name: 'Velvet', tier: 'pro',
@@ -77,6 +79,8 @@
       swatch: ['#6a6a6a', '#777777', '#525252', '#dcdcdc'] },
     { id: 'olive', name: 'Olive', tier: 'pro',
       swatch: ['#5a6048', '#666c52', '#42473a', '#d97448'] },
+    { id: 'patina', name: 'Patina', tier: 'pro',
+      swatch: ['#3d5a55', '#456861', '#2a4540', '#c66830'] },
     { id: 'dusk', name: 'Dusk', tier: 'pro',
       swatch: ['#5e525c', '#6a5d68', '#473d44', '#d8b8c5'] },
     { id: 'bruise', name: 'Bruise', tier: 'pro',
