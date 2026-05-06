@@ -2066,103 +2066,6 @@
   });
 
   // -----------------------------------------------------------------------
-  // Demo seed (development only — for screenshot capture)
-  // -----------------------------------------------------------------------
-  // Triggered by ?seed=1 URL param. Wipes existing favorites and writes
-  // a curated demo set so screenshots can be captured quickly without
-  // manually adding 20+ tiles. Real users never see this — they don't
-  // type ?seed=1 into the new-tab URL. After capturing, use the
-  // existing "Clear all" button in Settings to reset, or keep the demo
-  // data — it's just regular favorites that the user owns now.
-  //
-  // To remove for production builds: delete this entire block plus the
-  // ?seed check in init(). Or just leave it — it's dormant unless the
-  // URL param is present.
-
-  function buildDemoFavorites() {
-    const fav = (title, url) => ({
-      kind: 'favorite',
-      id: generateId(),
-      title,
-      url,
-      customIcon: null,
-      createdAt: Date.now(),
-    });
-    const folder = (title, color, items, open = false) => ({
-      kind: 'folder',
-      id: generateId(),
-      title,
-      color,
-      items,
-      open,
-    });
-
-    return [
-      // Top-level recognizable tiles — what most users would have
-      fav('Google',         'https://www.google.com'),
-      fav('YouTube',        'https://www.youtube.com'),
-      fav('Wikipedia',      'https://en.wikipedia.org'),
-      fav('Reddit',         'https://www.reddit.com'),
-      fav('GitHub',         'https://github.com'),
-      fav('Spotify',        'https://open.spotify.com'),
-      fav('Netflix',        'https://www.netflix.com'),
-      fav('Notion',         'https://www.notion.so'),
-      fav('Twitch',         'https://www.twitch.tv'),
-      fav('Amazon',         'https://www.amazon.com'),
-      fav('X',              'https://x.com'),
-      fav('LinkedIn',       'https://www.linkedin.com'),
-      fav('The New York Times', 'https://www.nytimes.com'),
-
-      // Colored folders — variety for visual interest
-      folder('Work',     'red',     [
-        fav('Gmail',         'https://mail.google.com'),
-        fav('Google Drive',  'https://drive.google.com'),
-        fav('Stack Overflow','https://stackoverflow.com'),
-      ]),
-      folder('Music',    'purple',  [
-        fav('SoundCloud',    'https://soundcloud.com'),
-        fav('Bandcamp',      'https://bandcamp.com'),
-      ]),
-      folder('News',     'blue',    [
-        fav('The Verge',     'https://www.theverge.com'),
-        fav('Hacker News',   'https://news.ycombinator.com'),
-      ]),
-      folder('Tools',    'amber',   [
-        fav('Khan Academy',  'https://www.khanacademy.org'),
-        fav('Letterboxd',    'https://letterboxd.com'),
-      ]),
-      folder('Shopping', 'green',   [
-        fav('DoorDash',      'https://www.doordash.com'),
-      ]),
-    ];
-  }
-
-  async function seedDemoFavorites() {
-    // Safety: refuse to seed if the user already has more than a few
-    // favorites. The seed wipes existing data, and we don't want a
-    // user who's invested in their dashboard to lose it from an
-    // accidental keystroke. Empty/near-empty dashboards (i.e. you're
-    // explicitly setting up for screenshots) are fine to overwrite.
-    if (favorites.length > 5) {
-      console.warn('Seed refused: dashboard has', favorites.length,
-        'items. Clear all favorites first if you really want to seed.');
-      return;
-    }
-    favorites = buildDemoFavorites();
-    const result = await saveFavorites(favorites);
-    if (!result.ok) {
-      console.error('Seed failed:', result.error);
-      return;
-    }
-    render();
-    // Clean the URL so a refresh doesn't re-seed (which would wipe any
-    // tiles you've manually adjusted between shots).
-    const url = new URL(window.location.href);
-    url.searchParams.delete('seed');
-    window.history.replaceState({}, '', url.toString());
-  }
-
-  // -----------------------------------------------------------------------
   // Initial load
   // -----------------------------------------------------------------------
 
@@ -2170,20 +2073,5 @@
     [favorites, settings] = await Promise.all([loadFavorites(), loadSettings()]);
     applySettings(settings);
     render();
-
-    // Demo seed hook — fires on either ?seed=1 in the URL OR pressing
-    // Ctrl+Shift+D (Cmd+Shift+D on Mac). The keyboard shortcut is more
-    // reliable than the URL param since chrome://newtab navigation can
-    // strip query strings. Pick whichever you prefer.
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('seed') === '1') {
-      await seedDemoFavorites();
-    }
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'D' && (e.ctrlKey || e.metaKey) && e.shiftKey) {
-        e.preventDefault();
-        seedDemoFavorites();
-      }
-    });
   })();
 })();
