@@ -1915,3 +1915,39 @@ body.is-dragging .tile-folder.is-add-target .tile-tooltip {
   :root { --tile-min: 120px; --grid-gap: 12px; }
   .btn { padding: 9px 14px; }
 }
+
+/* ---------- Accessibility ---------- */
+
+/* Honor the OS-level reduce-motion preference. Users who set this
+   typically have vestibular sensitivity, migraines, or just don't want
+   movement on screen. We blanket-disable transitions and animations
+   rather than tuning them individually — every animation in the app
+   is decorative, none of them communicate state-change meaning that
+   would be lost without movement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Theme-aware focus rings for keyboard navigation. The default
+   browser focus ring (a thin blue outline) doesn't read well against
+   vivid theme backgrounds — Synthwave's purple, Acid's green-on-black,
+   Inferno's red would all fight a fixed-blue ring. Use the theme's
+   accent color so the ring always reads as "intentional and on-brand"
+   rather than "browser default." Applies only to keyboard focus
+   (:focus-visible) so mouse users don't see rings on click.
+
+   Component-specific focus rules elsewhere in this file (buttons,
+   search, segmented controls, tiles) override this baseline with
+   tuned offsets — this is just the catch-all for everything else. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

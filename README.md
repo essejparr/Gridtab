@@ -1,122 +1,83 @@
 # GridTab
 
-A Chrome extension that replaces the New Tab page with a clean dashboard of your favorite sites, arranged as a grid of connected square tiles.
+A Chrome extension that replaces the New Tab page with a clean,
+customizable dashboard of your favorite sites — arranged as a grid of
+square tiles you can organize, color, and group into folders.
 
-Built with Manifest V3, plain HTML/CSS/JS, and `chrome.storage.local`. No dependencies, no tracking, no external scripts.
+Built with Manifest V3, plain HTML/CSS/JS, and `chrome.storage.local`.
+No dependencies, no tracking, no external scripts.
 
 ---
 
 ## Features
 
-- **Custom New Tab dashboard** — opens whenever you create a new tab.
-- **Square, responsive tiles** — favorites display as a grid of equally-sized blocks that wrap automatically on any screen size.
-- **Customizable layout** — settings panel lets you adjust tile size, spacing between tiles, icon size, and theme (auto/light/dark).
-- **Add / edit / delete favorites** — manage your list from a simple modal.
-- **URL normalization** — entering `github.com` automatically becomes `https://github.com`. Invalid URLs are rejected with inline feedback.
-- **Favicons** — fetched on the fly from a public favicon service, with a letter-avatar fallback if the favicon can't load.
-- **Local persistence** — saved to `chrome.storage.local`, so your list syncs across new tabs in the same browser profile.
-- **Light + dark mode** — automatically follows your OS theme via `prefers-color-scheme`.
+- **Drag-and-drop tile reordering** with insertion previews
+- **Folders** — create by drag-merging two tiles, custom colors, inline
+  expansion, drag children in and out freely
+- **34 built-in themes** across light, muted, and dark sections
+- **Custom icon uploads** or auto-fetched favicons (PNG/SVG)
+- **Search bar** with 8 engines: Google, DuckDuckGo, Bing, Brave,
+  Ecosia, Kagi, Perplexity, YouTube
+- **Adjustable layout** — tile size, spacing, icon scale
+- **Customizable accent button color** with 15 palette options plus
+  theme-default
+- **Press "/"** anywhere to focus the search bar
+- **Press Esc** to close any open modal or popover
+- **Local-only data** — favorites, folders, and preferences stored
+  via `chrome.storage.local`. Nothing transmitted, no analytics, no
+  tracking
 
 ---
 
-## Setup — load the unpacked extension
+## Install (end users)
 
-1. Download or clone this folder so you have a local copy of the `gridtab/` directory.
-2. Open Chrome and go to `chrome://extensions`.
-3. Toggle **Developer mode** on (top-right corner).
-4. Click **Load unpacked**.
-5. Select the `gridtab/` folder.
-6. Open a new tab — you'll see the GridTab dashboard.
+The extension will be available on the Chrome Web Store. (Link to be
+added once approved.)
 
-To update the extension after editing files, return to `chrome://extensions` and click the refresh icon on the GridTab card.
+## Install (development / unpacked)
+
+1. Clone or download this repo.
+2. Open Chrome → `chrome://extensions`.
+3. Toggle **Developer mode** on (top right).
+4. Click **Load unpacked** → select the `gridtab/` folder.
+5. Open a new tab — the dashboard appears.
 
 ---
 
-## How it works
+## Permissions
 
-The extension is intentionally small. It consists of five files plus three icons:
+GridTab requests one permission only: `storage`. This is used to save
+your tile configuration, folder structure, and preferences locally.
+No other permissions, no host permissions, no remote code.
 
-| File | Purpose |
-| --- | --- |
-| `manifest.json` | Declares Manifest V3, the `storage` permission, and overrides the New Tab page via `chrome_url_overrides`. |
-| `newtab.html` | Markup for the header, grid, empty state, and add/edit modal. |
-| `newtab.css` | All styling. Uses CSS variables for theming and CSS Grid (`auto-fill` + `aspect-ratio: 1 / 1`) to produce square, responsive tiles. |
-| `newtab.js` | Loads favorites from `chrome.storage.local`, renders the grid, and handles add/edit/delete + URL validation. |
-| `README.md` | This file. |
+See [PRIVACY.md](./PRIVACY.md) for the full privacy policy.
 
-### New Tab override
+---
 
-`manifest.json` declares:
+## Repository layout
 
-```json
-"chrome_url_overrides": { "newtab": "newtab.html" }
+```
+gridtab/
+├── manifest.json          # MV3 extension manifest
+├── newtab.html            # the New Tab page
+├── newtab.css             # all theme variables and styles
+├── newtab.js              # all behavior (no build step)
+├── icons/                 # toolbar icons (16/48/128)
+├── store-assets/          # Web Store listing assets — NOT shipped
+├── PRIVACY.md             # privacy policy
+└── README.md              # this file
 ```
 
-When the user opens a new tab, Chrome serves `newtab.html` instead of the default Google page.
+## Building a release zip
 
-### Storage model
-
-Favorites are stored in `chrome.storage.local` under a single key, `favorites`, as an array of objects:
-
-```js
-{
-  id: "uuid-or-fallback",
-  title: "GitHub",
-  url: "https://github.com/",
-  createdAt: 1700000000000
-}
+```bash
+zip -r gridtab.zip . \
+  -x "*.DS_Store" \
+  -x "store-assets/*" \
+  -x ".gitignore" \
+  -x "PRIVACY.md" \
+  -x "README.md"
 ```
 
-`chrome.storage.local` is used (not `localStorage`) because it's the official extension API for persistence — it's larger, async, and works correctly inside the extension context.
-
-The page also subscribes to `chrome.storage.onChanged`, so if you add a favorite in one new tab it appears in any other open new tab automatically.
-
-### Permissions
-
-Only `storage` is requested. Favicons are fetched from a public URL (no host permission needed), and no other Chrome APIs are used.
-
-### URL handling
-
-`normalizeUrl()` in `newtab.js`:
-
-1. Trims whitespace.
-2. Prepends `https://` if no scheme is present.
-3. Parses with the `URL` constructor.
-4. Rejects anything that isn't `http:` / `https:` or that lacks a hostname with a dot.
-
-This keeps the input forgiving while preventing junk like `javascript:` or empty values from ending up in the grid.
-
-### Tile layout
-
-The grid uses:
-
-```css
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-gap: 16px;
-```
-
-…with each tile set to `aspect-ratio: 1 / 1`. That combination produces equally-sized squares that automatically reflow into more or fewer columns as the viewport resizes — which is what gives the layout its "connected blocks" feel.
-
----
-
-## Where future features could be added
-
-The codebase is structured so each of these would be a focused addition:
-
-- **Drag-and-drop reordering** — wire up `pointerdown`/`pointermove` (or the HTML5 drag API) on each tile, reorder the `favorites` array, then call `saveFavorites()` and re-render. The render function already keys off `favorites` order, so no other changes are needed.
-- **Folders or groups** — extend the favorite object with a `groupId` field and render section headers above the grid.
-- **Import / export** — add buttons that read/write `favorites` as JSON; handy for backup or moving between profiles.
-- **Sync across devices** — swap `chrome.storage.local` for `chrome.storage.sync`. The interface is identical; only the storage area changes.
-- **Search bar** — a header `<input>` that filters tiles by title/domain on `input` events.
-- **Custom backgrounds or themes** — add a settings modal that writes a theme preference to storage and toggles a class on `<body>`.
-- **Keyboard shortcuts** — number-key navigation (1–9 to open the first nine tiles), or `/` to focus a search field.
-- **Bookmark import** — use the `bookmarks` permission to seed the grid from existing Chrome bookmarks.
-
-Each of these can slot in without restructuring the existing code.
-
----
-
-## Privacy
-
-GridTab does not include analytics, tracking, ads, or any external scripts. The only outbound network request the page makes is to `https://www.google.com/s2/favicons` to fetch favicons for the sites you've added. If you'd prefer no outbound requests at all, remove the `<img>` block in `buildTile()` in `newtab.js` — the letter-avatar fallback will be used for every tile.
+This excludes everything that doesn't need to ship inside the
+installed extension (store assets, repo metadata, docs).
