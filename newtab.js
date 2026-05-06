@@ -11,6 +11,9 @@
   const SETTINGS_KEY = 'settings';
 
   // Default settings. Each maps to one or more CSS variables on :root.
+  // Default settings. Search uses the user's Chrome default search
+  // engine via the chrome.search API — there is no engine choice
+  // persisted in our settings, by design.
   const DEFAULT_SETTINGS = {
     tileSize: 'md',     // sm | md | lg
     gap:      'normal', // tight | normal | relaxed
@@ -22,7 +25,6 @@
     // reintroduce a paywall later by flipping this to false and wiring
     // up real billing. For v1 launch: everyone gets everything.
     isPro: true,
-    searchEngine: 'google', // see SEARCH_ENGINES below
   };
 
   /**
@@ -141,65 +143,6 @@
     { id: 'lightPurple',name: 'Light Purple',bg: '#c4b5fd', hover: '#b3a0fc' },
   ];
 
-  /**
-   * Search engine registry. Each engine has a URL template with {q} as
-   * the placeholder for the URL-encoded query, plus an inline SVG icon
-   * (so we don't depend on external favicon services for the chrome).
-   *
-   * Icons are simplified single-color or two-color marks based on each
-   * brand's identity guidelines. They render at ~20px in the UI; subtle
-   * detail at that size is wasted, so simpler is better.
-   */
-  const SEARCH_ENGINES = [
-    {
-      id: 'google', name: 'Google',
-      url: 'https://www.google.com/search?q={q}',
-      // Google's classic 4-color "G" mark.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`,
-    },
-    {
-      id: 'bing', name: 'Bing',
-      url: 'https://www.bing.com/search?q={q}',
-      // Microsoft Bing's stylized B mark.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37C2B1"/><stop offset=".5" stop-color="#0EA5C7"/><stop offset="1" stop-color="#0078D4"/></linearGradient></defs><path fill="url(#bg)" d="M5 2v15.5l4.5-1.7 4.7 2.4L9 21V19l-4-1.5V2zm0 0 4.5 1.7v9l4.7 1.7 4-1.7L5 22V11.5l-4.5-1.7z" transform="translate(2 0)"/></svg>`,
-    },
-    {
-      id: 'duckduckgo', name: 'DuckDuckGo',
-      url: 'https://duckduckgo.com/?q={q}',
-      // DDG's orange duck mark — simplified.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#DE5833"/><path fill="#fff" d="M14.5 6.8c-1 .5-1.5 1.2-1.5 2.5 0 2 2 2.5 2 4.5 0 2.5-2 3-2 6h-3l.5-3.5c-1.5-.5-3-1.5-3.5-3.5 0-1 .5-1.5 1-1.5l-1-1c0-1 1.5-1.5 3-1.5 2.5 0 3.5.5 4.5-2z"/><circle cx="14.5" cy="9.8" r="1.1" fill="#fff"/><circle cx="14.5" cy="9.8" r=".5" fill="#000"/></svg>`,
-    },
-    {
-      id: 'brave', name: 'Brave Search',
-      url: 'https://search.brave.com/search?q={q}',
-      // Brave's lion-shield silhouette — simplified to the orange shield form.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#FB542B" d="M21 6.5 19.5 4l-3 .5L12 2 7.5 4.5 4.5 4 3 6.5l1.5 3-.5 4.5 1.5 5L12 22l6.5-3 1.5-5-.5-4.5z"/><path fill="#fff" d="M12 7.5 9 9.5l1.5 3-2 2 3.5 3.5 3.5-3.5-2-2 1.5-3z" opacity=".9"/></svg>`,
-    },
-    {
-      id: 'ecosia', name: 'Ecosia',
-      url: 'https://www.ecosia.org/search?q={q}',
-      // Ecosia's leaf-circle mark.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#36A86E"/><path fill="#fff" d="M6.5 14.5c2 2 6 2 9 0-1-.5-2-.5-3.5-.5l-1.5-1.5c0-1.5.5-2.5 1.5-3.5 1.5 0 2.5 0 3.5-.5-3-2-7-2-9 0-1.5 2-1.5 4 0 6z"/></svg>`,
-    },
-    {
-      id: 'kagi', name: 'Kagi',
-      url: 'https://kagi.com/search?q={q}',
-      // Kagi's yellow circle with stylized K.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#FFB319"/><path fill="#1a1a1a" d="M8 7h2v4l4-4h2.5l-4.5 4.5L17 17h-2.5L11 13v4H8z"/></svg>`,
-    },
-    {
-      id: 'perplexity', name: 'Perplexity',
-      url: 'https://www.perplexity.ai/?q={q}',
-      // Perplexity's stylized "?" / network mark.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#1F1F1F"/><path fill="#20B8A6" d="M12 4 4 9v6l8 5 8-5V9zm0 2 5 3-5 3-5-3zm-6 5 5 3v5l-5-3zm12 0v5l-5 3v-5z"/></svg>`,
-    },
-    {
-      id: 'youtube', name: 'YouTube',
-      url: 'https://www.youtube.com/results?search_query={q}',
-      // YouTube's red "play button" rounded rectangle.
-      icon: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#FF0000" d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.5.6c-1 .3-1.7 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.6 9.5.6 9.5.6s7.6 0 9.5-.6c1-.3 1.7-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8z"/><path fill="#fff" d="M9.6 15.6V8.4l6.3 3.6z"/></svg>`,
-    },
-  ];
 
   // Maps each setting value to the CSS variable values it should produce.
   // Keeping this here (not in CSS) lets us validate stored values and fall
@@ -248,12 +191,9 @@
   const colorMenuGrid  = document.getElementById('colorMenuGrid');
   // Theme picker.
   const themeGrid      = document.getElementById('themeGrid');
-  // Search bar + engine popover.
+  // Search bar.
   const searchForm     = document.getElementById('searchForm');
   const searchInput    = document.getElementById('searchInput');
-  const engineBtn      = document.getElementById('engineBtn');
-  const engineIcon     = document.getElementById('engineIcon');
-  const enginePopover  = document.getElementById('enginePopover');
   // Custom icon uploader (in the favorite edit modal).
   const iconPreview    = document.getElementById('iconPreview');
   const iconFileInput  = document.getElementById('iconFileInput');
@@ -600,82 +540,29 @@
   // Search bar
   // -----------------------------------------------------------------------
 
-  function getCurrentEngine() {
-    return SEARCH_ENGINES.find((e) => e.id === settings.searchEngine)
-        || SEARCH_ENGINES[0];
-  }
-
-  /** Render the engine icon inside the search-bar's left button. */
-  function renderEngineButton() {
-    const engine = getCurrentEngine();
-    engineIcon.innerHTML = engine.icon;
-    engineBtn.title = `Search with ${engine.name}`;
-    searchInput.placeholder = `Search ${engine.name}…`;
-  }
-
-  /** Render the engine popover list. */
-  function renderEnginePopover() {
-    enginePopover.innerHTML = '';
-    for (const engine of SEARCH_ENGINES) {
-      const opt = document.createElement('button');
-      opt.type = 'button';
-      opt.className = 'engine-option';
-      opt.setAttribute('role', 'menuitemradio');
-      opt.setAttribute('aria-checked',
-        settings.searchEngine === engine.id ? 'true' : 'false');
-
-      const iconWrap = document.createElement('span');
-      iconWrap.className = 'engine-option-icon';
-      iconWrap.innerHTML = engine.icon;
-
-      const name = document.createElement('span');
-      name.className = 'engine-option-name';
-      name.textContent = engine.name;
-
-      opt.appendChild(iconWrap);
-      opt.appendChild(name);
-      opt.addEventListener('click', async () => {
-        if (settings.searchEngine !== engine.id) {
-          settings = { ...settings, searchEngine: engine.id };
-          renderEngineButton();
-          await saveSettings(settings);
-        }
-        closeEnginePopover();
-        searchInput.focus();
-      });
-      enginePopover.appendChild(opt);
-    }
-  }
-
-  function openEnginePopover() {
-    renderEnginePopover();
-    enginePopover.hidden = false;
-    engineBtn.setAttribute('aria-expanded', 'true');
-    setTimeout(() => document.addEventListener('click', outsideEnginePopover), 0);
-  }
-  function closeEnginePopover() {
-    enginePopover.hidden = true;
-    engineBtn.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', outsideEnginePopover);
-  }
-  function outsideEnginePopover(e) {
-    if (!searchForm.contains(e.target)) closeEnginePopover();
-  }
-
-  engineBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (enginePopover.hidden) openEnginePopover();
-    else closeEnginePopover();
-  });
-
-  // Submit: build the engine URL with the query and navigate.
+  /**
+   * Submit handler. Routes the typed query through Chrome's official
+   * Search API, which uses whatever default search engine the user has
+   * set in their browser settings. We don't pick the engine ourselves —
+   * doing so would violate the Web Store's single-purpose policy for
+   * extensions that override the New Tab page.
+   *
+   * The chrome.search.query() call handles URL encoding and navigation
+   * internally; we just hand it the raw text.
+   */
   searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const query = searchInput.value.trim();
     if (!query) return;
-    const engine = getCurrentEngine();
-    const url = engine.url.replace('{q}', encodeURIComponent(query));
-    window.location.href = url;
+    if (typeof chrome !== 'undefined' && chrome.search && chrome.search.query) {
+      chrome.search.query({ text: query, disposition: 'CURRENT_TAB' });
+    } else {
+      // Fallback for environments where chrome.search isn't available
+      // (e.g., loading the page outside the extension context for
+      // testing). Plain Google search keeps the bar functional.
+      window.location.href =
+        'https://www.google.com/search?q=' + encodeURIComponent(query);
+    }
   });
 
   // -----------------------------------------------------------------------
@@ -2142,7 +2029,6 @@
   // Esc closes whichever modal/popover is open.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (!enginePopover.hidden) { closeEnginePopover(); return; }
     if (!colorMenu.hidden) { closeColorMenu(); return; }
     if (!modal.hidden) closeModal();
     else if (!settingsModal.hidden) closeSettingsModal();
@@ -2160,7 +2046,7 @@
        target.isContentEditable);
     if (isTyping) return;
     if (!modal.hidden || !settingsModal.hidden) return;
-    if (!enginePopover.hidden || !colorMenu.hidden) return;
+    if (!colorMenu.hidden) return;
     e.preventDefault();
     searchInput.focus();
     searchInput.select();
@@ -2176,7 +2062,6 @@
     if (changes[SETTINGS_KEY]) {
       settings = { ...DEFAULT_SETTINGS, ...(changes[SETTINGS_KEY].newValue || {}) };
       applySettings(settings);
-      renderEngineButton();
     }
   });
 
@@ -2187,7 +2072,6 @@
   (async function init() {
     [favorites, settings] = await Promise.all([loadFavorites(), loadSettings()]);
     applySettings(settings);
-    renderEngineButton();
     render();
   })();
 })();
