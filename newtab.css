@@ -926,12 +926,21 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 500;
 }
 
-/* Icon-only button (e.g. settings gear) — square, no text. */
+/* Icon-only button (e.g. settings gear) — square, no text. Uses the
+   full text color rather than --text-muted (which .btn-ghost defaults
+   to) because icon-only buttons have less visual weight than text
+   buttons and need stronger color to read as "clickable" at small
+   sizes. Especially noticeable on light/muted themes where muted
+   colors fade into the background. */
 .btn-icon-only {
   padding: 10px;
   width: 40px;
   height: 40px;
   justify-content: center;
+  color: var(--text);
+}
+.btn-icon-only:hover {
+  color: var(--text);
 }
 
 .header-actions {
@@ -959,7 +968,10 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* Static search icon on the left of the search bar. Decorative —
-   not interactive, just signals "this is a search input." */
+   not interactive, just signals "this is a search input." Uses
+   --text-muted (one step less subtle than the placeholder) so it
+   reads as deliberate UI rather than disappearing into the background
+   on lighter themes like Linen and Marble. */
 .search-icon {
   display: flex;
   align-items: center;
@@ -967,7 +979,7 @@ button { font-family: inherit; cursor: pointer; }
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   pointer-events: none;
 }
 
