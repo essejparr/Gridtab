@@ -1250,6 +1250,39 @@
     showModal();
   }
 
+  /**
+   * Open the add-favorite modal with URL and optional title pre-filled.
+   * Used when the user drags a URL or link from another tab onto the
+   * dashboard. Always lands on the Favorite tab (not Folder), since
+   * the dropped data describes a single URL. After opening, focus
+   * moves to the Title field — the URL is already correct, but the
+   * title from a link drag is often something the user wants to
+   * refine (link text is sometimes "click here" or similar).
+   */
+  function openAddModalPrefilled(url, title) {
+    editingId = null;
+    editingKind = 'favorite';
+    modalTitle.textContent = 'Add';
+    saveLabel.textContent = 'Save';
+    folderSaveLabel.textContent = 'Save';
+    deleteBtn.hidden = true;
+    folderDeleteBtn.hidden = true;
+    titleInput.value = title || '';
+    urlInput.value = url || '';
+    folderTitleInput.value = '';
+    setPendingCustomIcon(null);
+    setPendingFolderColor('default');
+    modalTabs.hidden = false;
+    setModalTab('favorite');
+    showModal();
+    // If we already have a title, focus the URL field so user can verify
+    // it. If no title, focus the title field — that's the field most
+    // likely to need attention from a drop.
+    setTimeout(() => {
+      (title ? urlInput : titleInput).focus();
+    }, 50);
+  }
+
   function openEditModal(id) {
     // Look up the item — it might be at top level or inside a folder.
     const loc = findItemById(id);
@@ -2050,6 +2083,111 @@
     e.preventDefault();
     searchInput.focus();
     searchInput.select();
+  });
+
+  // -----------------------------------------------------------------------
+  // External drop — drag a URL/link/tab from another tab onto the
+  // dashboard to add it as a favorite. Opens the add-favorite modal
+  // prefilled with the dropped data so the user can verify and edit
+  // before saving.
+  // -----------------------------------------------------------------------
+
+  /**
+   * Determine whether a DragEvent carries external URL data (i.e., not
+   * one of our internal tile drags). External drags from web content
+   * include 'text/uri-list' (links) or 'text/plain' (text selections,
+   * which may or may not be URLs). Our internal drags use custom
+   * data types that don't include these, so this check cleanly
+   * separates the two.
+   */
+  function isExternalUrlDrag(e) {
+    if (!e.dataTransfer) return false;
+    const types = e.dataTransfer.types;
+    if (!types) return false;
+    // Internal tile drags should not be picked up here. We can identify
+    // them because they're in flight on the same document and the
+    // currentDragId tracker is set.
+    if (typeof currentDragId !== 'undefined' && currentDragId) return false;
+    return types.includes('text/uri-list') || types.includes('text/plain');
+  }
+
+  /**
+   * Parse the dropped DataTransfer for a URL and (when available) a
+   * title. Returns { url, title } or null if no usable URL was found.
+   *
+   * Order of preference:
+   *   1. text/uri-list — set when dragging an actual <a> link or tab.
+   *      The data is one URL per line.
+   *   2. text/plain — set for selected-text drags. We only accept it
+   *      if it parses as a URL.
+   */
+  function parseDroppedUrl(dataTransfer) {
+    const uriList = dataTransfer.getData('text/uri-list');
+    if (uriList) {
+      // text/uri-list can have multiple lines; take the first non-
+      // comment line (lines starting with # are comments per spec).
+      const lines = uriList.split('\n').map((l) => l.trim());
+      for (const line of lines) {
+        if (line && !line.startsWith('#')) {
+          // Some browsers also provide title in a custom data type;
+          // text/plain often contains it for link drags.
+          const titleFromPlain = dataTransfer.getData('text/plain');
+          const title = (titleFromPlain && titleFromPlain !== line)
+            ? titleFromPlain
+            : '';
+          return { url: line, title };
+        }
+      }
+    }
+    // No uri-list: try plain text and see if it parses as a URL.
+    const plain = dataTransfer.getData('text/plain');
+    if (plain) {
+      const normalized = normalizeUrl(plain);
+      if (normalized) {
+        return { url: normalized, title: '' };
+      }
+    }
+    return null;
+  }
+
+  // dragover must be prevented to enable drop. Also signals to the user
+  // that the drop is accepted by showing the drop-target visual state.
+  document.addEventListener('dragover', (e) => {
+    if (!isExternalUrlDrag(e)) return;
+    e.preventDefault();
+    document.body.classList.add('is-external-drag');
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  });
+
+  // dragleave on document means the drag has left the page entirely.
+  // Browsers fire dragleave events when crossing element boundaries too,
+  // so we use a counter pattern: only remove the state when the drag
+  // truly exits. Easier approach: rely on dragend / drop / a final
+  // dragleave when target is null.
+  let externalDragCounter = 0;
+  document.addEventListener('dragenter', (e) => {
+    if (!isExternalUrlDrag(e)) return;
+    externalDragCounter++;
+  });
+  document.addEventListener('dragleave', (e) => {
+    if (!isExternalUrlDrag(e)) return;
+    externalDragCounter = Math.max(0, externalDragCounter - 1);
+    if (externalDragCounter === 0) {
+      document.body.classList.remove('is-external-drag');
+    }
+  });
+
+  document.addEventListener('drop', (e) => {
+    if (!isExternalUrlDrag(e)) return;
+    e.preventDefault();
+    externalDragCounter = 0;
+    document.body.classList.remove('is-external-drag');
+    if (!e.dataTransfer) return;
+    const parsed = parseDroppedUrl(e.dataTransfer);
+    if (!parsed) return;
+    // Don't fire if we're already in a modal — likely a misclick.
+    if (!modal.hidden || !settingsModal.hidden) return;
+    openAddModalPrefilled(parsed.url, parsed.title);
   });
 
   // Live-sync if storage changes in another tab.
