@@ -2164,8 +2164,8 @@
       check.type = 'checkbox';
       check.className = 'import-check import-folder-check';
       check.dataset.folder = String(fi);
-      // Folders start checked — the common case is "import this folder."
-      check.checked = true;
+      // Start unchecked — the picker opens empty so the user chooses
+      // what to import. "Select all" then works as expected.
 
       // Folder name + count are a label tied to the checkbox.
       const nameLabel = document.createElement('label');
@@ -2213,7 +2213,9 @@
         childCheck.className = 'import-check import-child-check';
         childCheck.dataset.folder = String(fi);
         childCheck.dataset.child = String(ci);
-        childCheck.checked = true; // mirror the folder's initial state
+        // Start unchecked to match the empty default. When the user
+        // checks the folder, all children follow (see the folder
+        // checkbox handler below).
 
         const linkName = document.createElement('span');
         linkName.className = 'import-link-name';
@@ -2223,10 +2225,11 @@
         childLabel.appendChild(linkName);
         childList.appendChild(childLabel);
 
-        childCheck.addEventListener('change', () => {
-          syncFolderCheckState(fi);
-          updateImportSummary();
-        });
+        // Child checks decide WHICH links come along. They do NOT touch
+        // the folder checkbox — that's an independent "wrap in a folder?"
+        // decision. This decoupling is what makes the hybrid model work:
+        // children checked with the folder box OFF import as free tiles.
+        childCheck.addEventListener('change', updateImportSummary);
       });
       groupEl.appendChild(childList);
 
@@ -2237,12 +2240,17 @@
         expandBtn.textContent = isOpen ? 'Edit' : 'Done';
       });
 
-      // Folder checkbox is a parent control: toggling it sets all its
-      // children to match.
+      // Folder checkbox means "wrap these in a folder." Checking it is
+      // also a convenience that selects all children (the common "grab
+      // the whole folder" case). Unchecking it does NOT clear child
+      // selections — it just removes the wrapper, so any still-checked
+      // children import as free tiles instead.
       check.addEventListener('change', () => {
-        childList.querySelectorAll('.import-child-check').forEach((c) => {
-          c.checked = check.checked;
-        });
+        if (check.checked) {
+          childList.querySelectorAll('.import-child-check').forEach((c) => {
+            c.checked = true;
+          });
+        }
         check.indeterminate = false;
         updateImportSummary();
       });
@@ -2283,60 +2291,55 @@
   }
 
   /**
-   * After a child checkbox changes, update its parent folder checkbox to
-   * reflect the children: all checked → checked, none → unchecked, some
-   * → indeterminate (the dash state). Keeps the folder header honest
-   * about what's actually selected inside it.
+   * Count what will import under the hybrid model and update the summary.
+   *
+   * Hybrid rules:
+   *   - Folder checkbox ON  → that folder imports as a GridTab folder
+   *     (with its checked children).
+   *   - Folder checkbox OFF but some children checked → those children
+   *     import as free top-level tiles.
+   *
+   * So the summary distinguishes folders-to-create from free-tiles-to-
+   * create, and the loose bookmarks add to the free-tile count.
    */
-  function syncFolderCheckState(fi) {
-    const folderCheck = importTree.querySelector(
-      `.import-folder-check[data-folder="${fi}"]`);
-    const childChecks = importTree.querySelectorAll(
-      `.import-child-check[data-folder="${fi}"]`);
-    if (!folderCheck || childChecks.length === 0) return;
-    const checked = [...childChecks].filter((c) => c.checked).length;
-    if (checked === 0) {
-      folderCheck.checked = false;
-      folderCheck.indeterminate = false;
-    } else if (checked === childChecks.length) {
-      folderCheck.checked = true;
-      folderCheck.indeterminate = false;
-    } else {
-      folderCheck.checked = false;
-      folderCheck.indeterminate = true;
-    }
-  }
-
-  /** Count selected items and update the summary line + confirm button. */
   function updateImportSummary() {
-    // A folder "counts" if it has at least one checked child. Count the
-    // folders with any selection, and the total individual links that
-    // will import (checked children + checked loose bookmarks).
-    const allFolderChecks = importTree.querySelectorAll('.import-folder-check');
-    let foldersWithSelection = 0;
-    let childItemCount = 0;
-    allFolderChecks.forEach((fc) => {
+    const folderChecks = importTree.querySelectorAll('.import-folder-check');
+    let folderCount = 0;       // folders that will be created
+    let freeTileCount = 0;     // individual links landing as free tiles
+    let anySelected = 0;       // anything at all selected (enables button)
+
+    folderChecks.forEach((fc) => {
       const fi = fc.dataset.folder;
       const checkedChildren = importTree.querySelectorAll(
         `.import-child-check[data-folder="${fi}"]:checked`).length;
-      if (checkedChildren > 0) {
-        foldersWithSelection++;
-        childItemCount += checkedChildren;
+      if (fc.checked) {
+        // Folder wrapper on: counts as a folder if it has any children.
+        if (checkedChildren > 0) {
+          folderCount++;
+          anySelected += checkedChildren;
+        }
+      } else {
+        // Folder wrapper off: checked children become free tiles.
+        freeTileCount += checkedChildren;
+        anySelected += checkedChildren;
       }
     });
-    const looseChecks = importTree.querySelectorAll('.import-loose-check:checked').length;
+
+    const looseChecked = importTree.querySelectorAll('.import-loose-check:checked').length;
+    freeTileCount += looseChecked;
+    anySelected += looseChecked;
 
     const parts = [];
-    if (foldersWithSelection > 0) {
-      parts.push(`${foldersWithSelection} folder${foldersWithSelection === 1 ? '' : 's'}`);
+    if (folderCount > 0) {
+      parts.push(`${folderCount} folder${folderCount === 1 ? '' : 's'}`);
     }
-    if (looseChecks > 0) {
-      parts.push(`${looseChecks} bookmark${looseChecks === 1 ? '' : 's'}`);
+    if (freeTileCount > 0) {
+      parts.push(`${freeTileCount} bookmark${freeTileCount === 1 ? '' : 's'}`);
     }
     importSummary.textContent = parts.length ? parts.join(' and ') + ' selected' : '';
-    importConfirmBtn.disabled = (childItemCount + looseChecks) === 0;
+    importConfirmBtn.disabled = anySelected === 0;
 
-    // Keep the Select all / Deselect all button label in sync with state.
+    // Keep the Select all / Deselect all button label in sync.
     const selectAllBtn = importTree.querySelector('.import-select-all-btn');
     if (selectAllBtn) {
       const allChecks = importTree.querySelectorAll(
@@ -2363,29 +2366,39 @@
 
     const newItems = [];
 
-    // Each folder imports as a GridTab folder containing only its
-    // still-checked children (Model A — trimmed children stay inside
-    // the folder, they don't escape to top level). A folder with zero
-    // checked children doesn't import at all. Imported folders use the
-    // 'default' color (theme accent), matching manually-created folders.
+    // Hybrid model per folder:
+    //   - Folder checkbox ON  → GridTab folder with its checked children.
+    //   - Folder checkbox OFF → checked children become free top-level
+    //     tiles (no folder created).
+    // Imported folders use the 'default' color (theme accent), matching
+    // manually-created folders.
     folders.forEach((folder, fi) => {
+      const folderCheck = importTree.querySelector(
+        `.import-folder-check[data-folder="${fi}"]`);
       const keptLinks = folder.links.filter((_, ci) => {
         const check = importTree.querySelector(
           `.import-child-check[data-folder="${fi}"][data-child="${ci}"]`);
         return check && check.checked;
       });
       if (keptLinks.length === 0) return;
-      newItems.push({
-        kind: 'folder',
-        id: generateId(),
-        title: folder.title,
-        color: 'default',
-        items: keptLinks.map(favOf),
-        open: false,
-      });
+
+      if (folderCheck && folderCheck.checked) {
+        // Wrap in a folder.
+        newItems.push({
+          kind: 'folder',
+          id: generateId(),
+          title: folder.title,
+          color: 'default',
+          items: keptLinks.map(favOf),
+          open: false,
+        });
+      } else {
+        // Folder wrapper off → free tiles.
+        keptLinks.forEach((link) => newItems.push(favOf(link)));
+      }
     });
 
-    // Selected loose bookmarks → free top-level tiles.
+    // Loose bookmarks → free top-level tiles.
     loose.forEach((link, li) => {
       const check = importTree.querySelector(
         `.import-loose-check[data-loose="${li}"]`);
