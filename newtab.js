@@ -2069,9 +2069,12 @@
       }
     }
 
-    function walkRoot(node) {
-      if (!node.children) return;
-      for (const child of node.children) {
+    // Process a "container" node's children — these are the folders and
+    // loose bookmarks the user actually sees. A child with a URL is a
+    // loose bookmark; a child with children is a real folder.
+    function processContainer(container) {
+      if (!container.children) return;
+      for (const child of container.children) {
         if (child.url) {
           loose.push({ title: child.title || child.url, url: child.url });
         } else if (child.children) {
@@ -2080,6 +2083,22 @@
           if (links.length > 0) {
             folders.push({ title: child.title || 'Folder', links });
           }
+        }
+      }
+    }
+
+    // Chrome's tree: nodes = [ root ]. The root's children are the
+    // CONTAINER nodes ("Bookmarks bar", "Other bookmarks", "Mobile
+    // bookmarks") — not folders the user thinks of as folders. The real
+    // user folders live one level deeper, inside those containers. So we
+    // descend through each container and process ITS children.
+    function walkRoot(rootNode) {
+      if (!rootNode.children) return;
+      for (const container of rootNode.children) {
+        // A container is a childless-of-url node holding the user's
+        // actual structure. Descend into it.
+        if (container.children) {
+          processContainer(container);
         }
       }
     }
