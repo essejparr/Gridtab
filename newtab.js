@@ -2225,11 +2225,15 @@
         childLabel.appendChild(linkName);
         childList.appendChild(childLabel);
 
-        // Child checks decide WHICH links come along. They do NOT touch
-        // the folder checkbox — that's an independent "wrap in a folder?"
-        // decision. This decoupling is what makes the hybrid model work:
-        // children checked with the folder box OFF import as free tiles.
-        childCheck.addEventListener('change', updateImportSummary);
+        // Child checks decide WHICH links come along. They update the
+        // folder checkbox's VISUAL state (checked / dash / empty) so the
+        // header honestly reflects its contents — but this is display
+        // only. What matters at import is whether the folder box is
+        // FULLY checked (→ folder) vs partial/empty (→ free tiles).
+        childCheck.addEventListener('change', () => {
+          syncFolderCheckDisplay(fi);
+          updateImportSummary();
+        });
       });
       groupEl.appendChild(childList);
 
@@ -2240,17 +2244,18 @@
         expandBtn.textContent = isOpen ? 'Edit' : 'Done';
       });
 
-      // Folder checkbox means "wrap these in a folder." Checking it is
-      // also a convenience that selects all children (the common "grab
-      // the whole folder" case). Unchecking it does NOT clear child
-      // selections — it just removes the wrapper, so any still-checked
-      // children import as free tiles instead.
+      // Folder checkbox means "import this whole folder as a folder."
+      // Toggling it cascades to all children symmetrically: check →
+      // all children check; uncheck → all children clear. This keeps
+      // the header and its contents consistent.
+      //
+      // The free-tile path doesn't use this checkbox at all: to pull
+      // individual links out as standalone tiles, leave the folder box
+      // unchecked, expand with "Edit", and check the specific children.
       check.addEventListener('change', () => {
-        if (check.checked) {
-          childList.querySelectorAll('.import-child-check').forEach((c) => {
-            c.checked = true;
-          });
-        }
+        childList.querySelectorAll('.import-child-check').forEach((c) => {
+          c.checked = check.checked;
+        });
         check.indeterminate = false;
         updateImportSummary();
       });
@@ -2291,13 +2296,39 @@
   }
 
   /**
+   * Update a folder checkbox's VISUAL state to reflect its children:
+   * all checked → checked, none → empty, some → indeterminate (dash).
+   * Display only — the import logic keys off whether the box is fully
+   * checked, and indeterminate counts as "not a folder wrapper" (its
+   * checked children import as free tiles).
+   */
+  function syncFolderCheckDisplay(fi) {
+    const folderCheck = importTree.querySelector(
+      `.import-folder-check[data-folder="${fi}"]`);
+    const childChecks = importTree.querySelectorAll(
+      `.import-child-check[data-folder="${fi}"]`);
+    if (!folderCheck || childChecks.length === 0) return;
+    const checked = [...childChecks].filter((c) => c.checked).length;
+    if (checked === 0) {
+      folderCheck.checked = false;
+      folderCheck.indeterminate = false;
+    } else if (checked === childChecks.length) {
+      folderCheck.checked = true;
+      folderCheck.indeterminate = false;
+    } else {
+      folderCheck.checked = false;
+      folderCheck.indeterminate = true;
+    }
+  }
+
+  /**
    * Count what will import under the hybrid model and update the summary.
    *
    * Hybrid rules:
-   *   - Folder checkbox ON  → that folder imports as a GridTab folder
-   *     (with its checked children).
-   *   - Folder checkbox OFF but some children checked → those children
-   *     import as free top-level tiles.
+   *   - Folder checkbox fully checked → that folder imports as a GridTab
+   *     folder (with all its children).
+   *   - Folder checkbox partial (dash) or empty, with some children
+   *     checked → those children import as free top-level tiles.
    *
    * So the summary distinguishes folders-to-create from free-tiles-to-
    * create, and the loose bookmarks add to the free-tile count.
