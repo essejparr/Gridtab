@@ -2142,10 +2142,13 @@
 
     selectAllBtn.addEventListener('click', () => {
       const allChecks = importTree.querySelectorAll(
-        '.import-folder-check, .import-loose-check');
+        '.import-folder-check, .import-child-check, .import-loose-check');
       // If everything is already checked, this acts as "Deselect all".
       const allChecked = [...allChecks].every((c) => c.checked);
-      allChecks.forEach((c) => { c.checked = !allChecked; });
+      allChecks.forEach((c) => {
+        c.checked = !allChecked;
+        c.indeterminate = false;
+      });
       updateImportSummary();
     });
 
@@ -2161,6 +2164,8 @@
       check.type = 'checkbox';
       check.className = 'import-check import-folder-check';
       check.dataset.folder = String(fi);
+      // Folders start checked — the common case is "import this folder."
+      check.checked = true;
 
       // Folder name + count are a label tied to the checkbox.
       const nameLabel = document.createElement('label');
@@ -2180,41 +2185,68 @@
       count.textContent =
         `${folder.links.length} item${folder.links.length === 1 ? '' : 's'}`;
 
-      // Expand toggle to preview folder contents.
+      // Expand toggle to reveal the folder's children for cherry-picking.
       const expandBtn = document.createElement('button');
       expandBtn.type = 'button';
       expandBtn.className = 'import-expand-btn';
       expandBtn.setAttribute('aria-expanded', 'false');
-      expandBtn.textContent = 'Preview';
+      expandBtn.textContent = 'Edit';
 
       header.appendChild(nameLabel);
       header.appendChild(count);
       header.appendChild(expandBtn);
       groupEl.appendChild(header);
 
-      // Preview list (collapsed by default, read-only).
-      const preview = document.createElement('div');
-      preview.className = 'import-links';
-      preview.hidden = true;
-      folder.links.forEach((link) => {
-        const row = document.createElement('div');
-        row.className = 'import-link import-link-preview';
+      // Children list — each is individually selectable. Collapsed by
+      // default so the folder list stays clean; expand to trim which
+      // children come along. Trimmed children still import INTO this
+      // folder (Model A) — they don't escape to top level.
+      const childList = document.createElement('div');
+      childList.className = 'import-links';
+      childList.hidden = true;
+      folder.links.forEach((link, ci) => {
+        const childLabel = document.createElement('label');
+        childLabel.className = 'import-link import-child';
+
+        const childCheck = document.createElement('input');
+        childCheck.type = 'checkbox';
+        childCheck.className = 'import-check import-child-check';
+        childCheck.dataset.folder = String(fi);
+        childCheck.dataset.child = String(ci);
+        childCheck.checked = true; // mirror the folder's initial state
+
         const linkName = document.createElement('span');
         linkName.className = 'import-link-name';
         linkName.textContent = link.title;
-        row.appendChild(linkName);
-        preview.appendChild(row);
+
+        childLabel.appendChild(childCheck);
+        childLabel.appendChild(linkName);
+        childList.appendChild(childLabel);
+
+        childCheck.addEventListener('change', () => {
+          syncFolderCheckState(fi);
+          updateImportSummary();
+        });
       });
-      groupEl.appendChild(preview);
+      groupEl.appendChild(childList);
 
       expandBtn.addEventListener('click', () => {
-        const isOpen = !preview.hidden;
-        preview.hidden = isOpen;
+        const isOpen = !childList.hidden;
+        childList.hidden = isOpen;
         expandBtn.setAttribute('aria-expanded', String(!isOpen));
-        expandBtn.textContent = isOpen ? 'Preview' : 'Hide';
+        expandBtn.textContent = isOpen ? 'Edit' : 'Done';
       });
 
-      check.addEventListener('change', updateImportSummary);
+      // Folder checkbox is a parent control: toggling it sets all its
+      // children to match.
+      check.addEventListener('change', () => {
+        childList.querySelectorAll('.import-child-check').forEach((c) => {
+          c.checked = check.checked;
+        });
+        check.indeterminate = false;
+        updateImportSummary();
+      });
+
       importTree.appendChild(groupEl);
     });
 
@@ -2250,25 +2282,65 @@
     updateImportSummary();
   }
 
-  /** Count selected folders + loose bookmarks; update summary + button. */
-  function updateImportSummary() {
-    const folderChecks = importTree.querySelectorAll('.import-folder-check:checked');
-    const looseChecks = importTree.querySelectorAll('.import-loose-check:checked');
-    const parts = [];
-    if (folderChecks.length > 0) {
-      parts.push(`${folderChecks.length} folder${folderChecks.length === 1 ? '' : 's'}`);
+  /**
+   * After a child checkbox changes, update its parent folder checkbox to
+   * reflect the children: all checked → checked, none → unchecked, some
+   * → indeterminate (the dash state). Keeps the folder header honest
+   * about what's actually selected inside it.
+   */
+  function syncFolderCheckState(fi) {
+    const folderCheck = importTree.querySelector(
+      `.import-folder-check[data-folder="${fi}"]`);
+    const childChecks = importTree.querySelectorAll(
+      `.import-child-check[data-folder="${fi}"]`);
+    if (!folderCheck || childChecks.length === 0) return;
+    const checked = [...childChecks].filter((c) => c.checked).length;
+    if (checked === 0) {
+      folderCheck.checked = false;
+      folderCheck.indeterminate = false;
+    } else if (checked === childChecks.length) {
+      folderCheck.checked = true;
+      folderCheck.indeterminate = false;
+    } else {
+      folderCheck.checked = false;
+      folderCheck.indeterminate = true;
     }
-    if (looseChecks.length > 0) {
-      parts.push(`${looseChecks.length} bookmark${looseChecks.length === 1 ? '' : 's'}`);
+  }
+
+  /** Count selected items and update the summary line + confirm button. */
+  function updateImportSummary() {
+    // A folder "counts" if it has at least one checked child. Count the
+    // folders with any selection, and the total individual links that
+    // will import (checked children + checked loose bookmarks).
+    const allFolderChecks = importTree.querySelectorAll('.import-folder-check');
+    let foldersWithSelection = 0;
+    let childItemCount = 0;
+    allFolderChecks.forEach((fc) => {
+      const fi = fc.dataset.folder;
+      const checkedChildren = importTree.querySelectorAll(
+        `.import-child-check[data-folder="${fi}"]:checked`).length;
+      if (checkedChildren > 0) {
+        foldersWithSelection++;
+        childItemCount += checkedChildren;
+      }
+    });
+    const looseChecks = importTree.querySelectorAll('.import-loose-check:checked').length;
+
+    const parts = [];
+    if (foldersWithSelection > 0) {
+      parts.push(`${foldersWithSelection} folder${foldersWithSelection === 1 ? '' : 's'}`);
+    }
+    if (looseChecks > 0) {
+      parts.push(`${looseChecks} bookmark${looseChecks === 1 ? '' : 's'}`);
     }
     importSummary.textContent = parts.length ? parts.join(' and ') + ' selected' : '';
-    importConfirmBtn.disabled = (folderChecks.length + looseChecks.length) === 0;
+    importConfirmBtn.disabled = (childItemCount + looseChecks) === 0;
 
     // Keep the Select all / Deselect all button label in sync with state.
     const selectAllBtn = importTree.querySelector('.import-select-all-btn');
     if (selectAllBtn) {
       const allChecks = importTree.querySelectorAll(
-        '.import-folder-check, .import-loose-check');
+        '.import-folder-check, .import-child-check, .import-loose-check');
       const allChecked = allChecks.length > 0 &&
         [...allChecks].every((c) => c.checked);
       selectAllBtn.textContent = allChecked ? 'Deselect all' : 'Select all';
@@ -2291,21 +2363,24 @@
 
     const newItems = [];
 
-    // Selected folders → GridTab folders with all their children.
-    // Imported folders use the 'default' color (the theme accent),
-    // matching what a manually-created folder defaults to. This keeps
-    // imported and hand-made folders consistent, and the user can
-    // re-color any of them afterward.
+    // Each folder imports as a GridTab folder containing only its
+    // still-checked children (Model A — trimmed children stay inside
+    // the folder, they don't escape to top level). A folder with zero
+    // checked children doesn't import at all. Imported folders use the
+    // 'default' color (theme accent), matching manually-created folders.
     folders.forEach((folder, fi) => {
-      const check = importTree.querySelector(
-        `.import-folder-check[data-folder="${fi}"]`);
-      if (!check || !check.checked) return;
+      const keptLinks = folder.links.filter((_, ci) => {
+        const check = importTree.querySelector(
+          `.import-child-check[data-folder="${fi}"][data-child="${ci}"]`);
+        return check && check.checked;
+      });
+      if (keptLinks.length === 0) return;
       newItems.push({
         kind: 'folder',
         id: generateId(),
         title: folder.title,
         color: 'default',
-        items: folder.links.map(favOf),
+        items: keptLinks.map(favOf),
         open: false,
       });
     });
