@@ -2038,20 +2038,26 @@
   }
 
   /**
-   * Walk Chrome's raw bookmark tree into a flat list of "groups":
-   * each top-level bookmark folder becomes a group with its direct
-   * link children. Loose bookmarks (directly under the roots, not in
-   * a folder) are collected into a synthetic "Loose bookmarks" group.
-   * Nested subfolders are flattened INTO their nearest named folder —
-   * GridTab folders are one level deep, so we don't try to preserve
-   * arbitrary nesting. This keeps the picker manageable and matches
-   * GridTab's data model.
+   * Walk Chrome's raw bookmark tree into two collections:
+   *   - folders: each named bookmark folder, with all its descendant
+   *     links flattened into one list (GridTab folders are one level
+   *     deep, so nested subfolders collapse into their ancestor folder).
+   *   - loose: bookmarks that sit directly under a root, not in any
+   *     folder. These are individual, free-standing.
+   *
+   * The selection model that follows from this:
+   *   - Selecting a FOLDER imports it as a GridTab folder with its
+   *     children. All-or-nothing per folder — you bring the folder.
+   *   - Selecting a LOOSE bookmark imports it as a free top-level tile.
+   *
+   * A bookmark only ends up inside a GridTab folder if its actual
+   * Chrome folder was selected. Individually chosen items are always
+   * free tiles.
    */
   function parseBookmarkTree(nodes) {
-    const groups = [];
+    const folders = [];
     const loose = [];
 
-    // Recursively collect all link descendants of a node.
     function collectLinks(node, out) {
       if (!node.children) return;
       for (const child of node.children) {
@@ -2063,20 +2069,16 @@
       }
     }
 
-    // The roots Chrome gives are wrapper nodes ("Bookmarks bar",
-    // "Other bookmarks", etc.). We descend into them and treat each
-    // named subfolder as a group; loose links go to the loose pile.
     function walkRoot(node) {
       if (!node.children) return;
       for (const child of node.children) {
         if (child.url) {
           loose.push({ title: child.title || child.url, url: child.url });
         } else if (child.children) {
-          // A named folder — flatten all its descendants into one group.
           const links = [];
           collectLinks(child, links);
           if (links.length > 0) {
-            groups.push({ title: child.title || 'Folder', links });
+            folders.push({ title: child.title || 'Folder', links });
           }
         }
       }
@@ -2085,16 +2087,22 @@
     for (const root of nodes) {
       walkRoot(root);
     }
-    if (loose.length > 0) {
-      groups.unshift({ title: 'Loose bookmarks', links: loose, isLoose: true });
-    }
-    return groups;
+    return { folders, loose };
   }
 
-  /** Render the parsed groups into the picker with checkboxes. */
-  function renderImportTree(groups) {
+  /**
+   * Render the parsed tree. Folders appear as single selectable units —
+   * checking a folder imports the whole folder. Folders are expandable
+   * to preview their contents (read-only preview; you can't deselect
+   * individual children, because the unit is the folder). Loose
+   * bookmarks appear as individual checkboxes since they're not in any
+   * folder and import as free tiles.
+   */
+  function renderImportTree(parsed) {
     importTree.innerHTML = '';
-    if (!groups || groups.length === 0) {
+    const { folders, loose } = parsed;
+
+    if (folders.length === 0 && loose.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'import-empty';
       empty.textContent = 'No bookmarks found to import.';
@@ -2102,138 +2110,161 @@
       return;
     }
 
-    groups.forEach((group, gi) => {
+    // --- Folders section ---
+    folders.forEach((folder, fi) => {
       const groupEl = document.createElement('div');
       groupEl.className = 'import-group';
 
-      const header = document.createElement('label');
+      const header = document.createElement('div');
       header.className = 'import-group-header';
 
-      const groupCheck = document.createElement('input');
-      groupCheck.type = 'checkbox';
-      groupCheck.className = 'import-check import-group-check';
-      groupCheck.dataset.group = String(gi);
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.className = 'import-check import-folder-check';
+      check.dataset.folder = String(fi);
 
-      const groupName = document.createElement('span');
-      groupName.className = 'import-group-name';
-      groupName.textContent = group.title;
+      // Folder name + count are a label tied to the checkbox.
+      const nameLabel = document.createElement('label');
+      nameLabel.className = 'import-group-label';
+      nameLabel.appendChild(check);
+      const folderIcon = document.createElement('span');
+      folderIcon.className = 'import-folder-icon';
+      folderIcon.textContent = '📁';
+      const name = document.createElement('span');
+      name.className = 'import-group-name';
+      name.textContent = folder.title;
+      nameLabel.appendChild(folderIcon);
+      nameLabel.appendChild(name);
 
-      const groupCount = document.createElement('span');
-      groupCount.className = 'import-group-count';
-      groupCount.textContent =
-        `${group.links.length} item${group.links.length === 1 ? '' : 's'}`;
+      const count = document.createElement('span');
+      count.className = 'import-group-count';
+      count.textContent =
+        `${folder.links.length} item${folder.links.length === 1 ? '' : 's'}`;
 
-      header.appendChild(groupCheck);
-      header.appendChild(groupName);
-      header.appendChild(groupCount);
+      // Expand toggle to preview folder contents.
+      const expandBtn = document.createElement('button');
+      expandBtn.type = 'button';
+      expandBtn.className = 'import-expand-btn';
+      expandBtn.setAttribute('aria-expanded', 'false');
+      expandBtn.textContent = 'Preview';
+
+      header.appendChild(nameLabel);
+      header.appendChild(count);
+      header.appendChild(expandBtn);
       groupEl.appendChild(header);
 
-      // Individual links, indented under the group.
-      const linksEl = document.createElement('div');
-      linksEl.className = 'import-links';
-      group.links.forEach((link, li) => {
-        const linkLabel = document.createElement('label');
-        linkLabel.className = 'import-link';
+      // Preview list (collapsed by default, read-only).
+      const preview = document.createElement('div');
+      preview.className = 'import-links';
+      preview.hidden = true;
+      folder.links.forEach((link) => {
+        const row = document.createElement('div');
+        row.className = 'import-link import-link-preview';
+        const linkName = document.createElement('span');
+        linkName.className = 'import-link-name';
+        linkName.textContent = link.title;
+        row.appendChild(linkName);
+        preview.appendChild(row);
+      });
+      groupEl.appendChild(preview);
 
-        const linkCheck = document.createElement('input');
-        linkCheck.type = 'checkbox';
-        linkCheck.className = 'import-check import-link-check';
-        linkCheck.dataset.group = String(gi);
-        linkCheck.dataset.link = String(li);
+      expandBtn.addEventListener('click', () => {
+        const isOpen = !preview.hidden;
+        preview.hidden = isOpen;
+        expandBtn.setAttribute('aria-expanded', String(!isOpen));
+        expandBtn.textContent = isOpen ? 'Preview' : 'Hide';
+      });
+
+      check.addEventListener('change', updateImportSummary);
+      importTree.appendChild(groupEl);
+    });
+
+    // --- Loose bookmarks section ---
+    if (loose.length > 0) {
+      if (folders.length > 0) {
+        const divider = document.createElement('div');
+        divider.className = 'import-section-label';
+        divider.textContent = 'Individual bookmarks';
+        importTree.appendChild(divider);
+      }
+      loose.forEach((link, li) => {
+        const row = document.createElement('label');
+        row.className = 'import-link import-loose';
+
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.className = 'import-check import-loose-check';
+        check.dataset.loose = String(li);
 
         const linkName = document.createElement('span');
         linkName.className = 'import-link-name';
         linkName.textContent = link.title;
 
-        linkLabel.appendChild(linkCheck);
-        linkLabel.appendChild(linkName);
-        linksEl.appendChild(linkLabel);
-      });
-      groupEl.appendChild(linksEl);
-      importTree.appendChild(groupEl);
+        row.appendChild(check);
+        row.appendChild(linkName);
+        importTree.appendChild(row);
 
-      // Group checkbox toggles all its links.
-      groupCheck.addEventListener('change', () => {
-        linksEl.querySelectorAll('.import-link-check').forEach((c) => {
-          c.checked = groupCheck.checked;
-        });
-        updateImportSummary();
+        check.addEventListener('change', updateImportSummary);
       });
-    });
-
-    // Any individual link change updates the group's indeterminate state
-    // and the overall summary.
-    importTree.addEventListener('change', (e) => {
-      if (e.target instanceof HTMLElement &&
-          e.target.classList.contains('import-link-check')) {
-        const gi = e.target.dataset.group;
-        const groupCheck = importTree.querySelector(
-          `.import-group-check[data-group="${gi}"]`);
-        const linkChecks = importTree.querySelectorAll(
-          `.import-link-check[data-group="${gi}"]`);
-        const checked = [...linkChecks].filter((c) => c.checked).length;
-        if (groupCheck) {
-          groupCheck.checked = checked === linkChecks.length;
-          groupCheck.indeterminate = checked > 0 && checked < linkChecks.length;
-        }
-        updateImportSummary();
-      }
-    });
+    }
 
     updateImportSummary();
   }
 
-  /** Count selected items and update the summary line + confirm button. */
+  /** Count selected folders + loose bookmarks; update summary + button. */
   function updateImportSummary() {
-    const selected = importTree.querySelectorAll('.import-link-check:checked').length;
-    importSummary.textContent = selected > 0
-      ? `${selected} item${selected === 1 ? '' : 's'} selected`
-      : '';
-    importConfirmBtn.disabled = selected === 0;
+    const folderChecks = importTree.querySelectorAll('.import-folder-check:checked');
+    const looseChecks = importTree.querySelectorAll('.import-loose-check:checked');
+    const parts = [];
+    if (folderChecks.length > 0) {
+      parts.push(`${folderChecks.length} folder${folderChecks.length === 1 ? '' : 's'}`);
+    }
+    if (looseChecks.length > 0) {
+      parts.push(`${looseChecks.length} bookmark${looseChecks.length === 1 ? '' : 's'}`);
+    }
+    importSummary.textContent = parts.length ? parts.join(' and ') + ' selected' : '';
+    importConfirmBtn.disabled = (folderChecks.length + looseChecks.length) === 0;
   }
 
   /** Build GridTab items from the current selection and write them. */
   async function confirmImport() {
     if (!importParsed) return;
+    const { folders, loose } = importParsed;
+
+    const favOf = (link) => ({
+      kind: 'favorite',
+      id: generateId(),
+      title: link.title,
+      url: link.url,
+      customIcon: null,
+      createdAt: Date.now(),
+    });
 
     const newItems = [];
     let colorIdx = 0;
 
-    importParsed.forEach((group, gi) => {
-      const selectedLinks = [];
-      group.links.forEach((link, li) => {
-        const check = importTree.querySelector(
-          `.import-link-check[data-group="${gi}"][data-link="${li}"]`);
-        if (check && check.checked) {
-          selectedLinks.push(link);
-        }
-      });
-      if (selectedLinks.length === 0) return;
-
-      const favOf = (link) => ({
-        kind: 'favorite',
+    // Selected folders → GridTab folders with all their children.
+    folders.forEach((folder, fi) => {
+      const check = importTree.querySelector(
+        `.import-folder-check[data-folder="${fi}"]`);
+      if (!check || !check.checked) return;
+      newItems.push({
+        kind: 'folder',
         id: generateId(),
-        title: link.title,
-        url: link.url,
-        customIcon: null,
-        createdAt: Date.now(),
+        title: folder.title,
+        color: IMPORT_FOLDER_COLORS[colorIdx % IMPORT_FOLDER_COLORS.length],
+        items: folder.links.map(favOf),
+        open: false,
       });
+      colorIdx++;
+    });
 
-      if (group.isLoose) {
-        // Loose bookmarks become top-level tiles.
-        selectedLinks.forEach((link) => newItems.push(favOf(link)));
-      } else {
-        // A named folder becomes a GridTab folder with its selected
-        // links as children.
-        newItems.push({
-          kind: 'folder',
-          id: generateId(),
-          title: group.title,
-          color: IMPORT_FOLDER_COLORS[colorIdx % IMPORT_FOLDER_COLORS.length],
-          items: selectedLinks.map(favOf),
-          open: false,
-        });
-        colorIdx++;
+    // Selected loose bookmarks → free top-level tiles.
+    loose.forEach((link, li) => {
+      const check = importTree.querySelector(
+        `.import-loose-check[data-loose="${li}"]`);
+      if (check && check.checked) {
+        newItems.push(favOf(link));
       }
     });
 

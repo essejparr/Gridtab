@@ -1804,7 +1804,7 @@ body.is-dragging .tile-folder.is-add-target .tile-tooltip {
 .import-tree {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .import-group {
   border: 1px solid var(--border);
@@ -1816,40 +1816,79 @@ body.is-dragging .tile-folder.is-add-target .tile-tooltip {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  cursor: pointer;
   background: var(--surface);
 }
-.import-group-header:hover { background: var(--surface-hover); }
+.import-group-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  cursor: pointer;
+  min-width: 0;
+}
+.import-folder-icon { font-size: 14px; flex-shrink: 0; }
 .import-group-name {
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
-  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .import-group-count {
   font-size: 12px;
   color: var(--text-subtle);
   flex-shrink: 0;
 }
+.import-expand-btn {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.import-expand-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
 .import-links {
   display: flex;
   flex-direction: column;
   padding: 4px 0 8px;
+  border-top: 1px solid var(--border);
 }
 .import-link {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px 6px 32px;
+  padding: 6px 12px;
+}
+.import-link-preview { padding-left: 36px; }
+.import-loose {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
-.import-link:hover { background: var(--surface-hover); }
+.import-loose:hover { background: var(--surface-hover); }
 .import-link-name {
   font-size: 13px;
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.import-loose .import-link-name { color: var(--text); }
+.import-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 10px 2px 2px;
 }
 .import-check {
   width: 16px;
