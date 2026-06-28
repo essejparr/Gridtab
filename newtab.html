@@ -238,6 +238,20 @@
             </div>
           </div>
 
+          <!-- Import from bookmarks. Requests the optional "bookmarks"
+               permission at click-time (not at install) so the install
+               prompt stays clean. Read-only with respect to Chrome:
+               imports copies into GridTab, never modifies bookmarks. -->
+          <div class="field">
+            <span class="field-label">Import</span>
+            <div class="folder-actions">
+              <button id="importBookmarksBtn" type="button"
+                      class="btn btn-ghost btn-sm">
+                Import from bookmarks
+              </button>
+            </div>
+          </div>
+
           <!-- Destructive: clear all favorites and folders. Visually
                demoted (ghost-style danger color) and behind a
                specific count-naming confirmation. -->
@@ -272,6 +286,41 @@
         <div class="modal-actions-right">
           <button type="button" class="btn btn-primary" data-close-settings="true">
             Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bookmark import modal. Shows a read-only tree of the user's
+       current Chrome bookmarks; the user selects which folders/links
+       to copy into GridTab. Never modifies Chrome bookmarks. -->
+  <div id="importModal" class="modal" hidden aria-hidden="true">
+    <div class="modal-backdrop" data-close-import="true"></div>
+    <div class="modal-card modal-card-tall" role="dialog" aria-modal="true"
+         aria-labelledby="importTitle">
+      <h2 id="importTitle" class="modal-title modal-header">Import from bookmarks</h2>
+
+      <div class="modal-body">
+        <p class="import-intro">
+          Select bookmarks and folders to copy into GridTab. This brings
+          a copy into your dashboard — your Chrome bookmarks stay
+          untouched.
+        </p>
+
+        <!-- Live region for the various states: loading, empty, error,
+             or the actual tree. Rendered by JS. -->
+        <div id="importTree" class="import-tree"></div>
+      </div>
+
+      <div class="modal-actions modal-footer">
+        <div class="import-summary" id="importSummary"></div>
+        <div class="modal-actions-right">
+          <button type="button" class="btn btn-ghost" data-close-import="true">
+            Cancel
+          </button>
+          <button id="importConfirmBtn" type="button" class="btn btn-primary" disabled>
+            Import selected
           </button>
         </div>
       </div>

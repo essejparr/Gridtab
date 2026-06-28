@@ -184,6 +184,12 @@
   const expandAllBtn   = document.getElementById('expandAllBtn');
   const collapseAllBtn = document.getElementById('collapseAllBtn');
   const clearAllBtn    = document.getElementById('clearAllBtn');
+  // Bookmark import.
+  const importBookmarksBtn = document.getElementById('importBookmarksBtn');
+  const importModal    = document.getElementById('importModal');
+  const importTree     = document.getElementById('importTree');
+  const importSummary  = document.getElementById('importSummary');
+  const importConfirmBtn = document.getElementById('importConfirmBtn');
   // Split add button + color picker.
   const addBtnWrap     = document.querySelector('.add-btn-wrap');
   const addBtnCaret    = document.getElementById('addBtnCaret');
@@ -2003,6 +2009,305 @@
   settingsBtn.addEventListener('click', openSettingsModal);
 
   // -----------------------------------------------------------------------
+  // Bookmark import
+  // -----------------------------------------------------------------------
+  // Read-only with respect to Chrome: requests the optional "bookmarks"
+  // permission at click time, reads the tree once, lets the user pick
+  // what to copy into GridTab, then releases the permission. Never
+  // modifies the user's Chrome bookmarks.
+
+  // Colors cycled through when assigning a color to each imported folder,
+  // so a multi-folder import doesn't come in as a wall of one color.
+  const IMPORT_FOLDER_COLORS = ['blue', 'green', 'amber', 'purple', 'teal', 'red'];
+
+  // Holds the parsed tree between render and confirm. Ephemeral — wiped
+  // when the modal closes. Nothing about the tree is persisted.
+  let importParsed = null;
+
+  function openImportModal() {
+    importModal.hidden = false;
+    importModal.setAttribute('aria-hidden', 'false');
+  }
+  function closeImportModal() {
+    importModal.hidden = true;
+    importModal.setAttribute('aria-hidden', 'true');
+    importTree.innerHTML = '';
+    importSummary.textContent = '';
+    importConfirmBtn.disabled = true;
+    importParsed = null;
+  }
+
+  /**
+   * Walk Chrome's raw bookmark tree into a flat list of "groups":
+   * each top-level bookmark folder becomes a group with its direct
+   * link children. Loose bookmarks (directly under the roots, not in
+   * a folder) are collected into a synthetic "Loose bookmarks" group.
+   * Nested subfolders are flattened INTO their nearest named folder —
+   * GridTab folders are one level deep, so we don't try to preserve
+   * arbitrary nesting. This keeps the picker manageable and matches
+   * GridTab's data model.
+   */
+  function parseBookmarkTree(nodes) {
+    const groups = [];
+    const loose = [];
+
+    // Recursively collect all link descendants of a node.
+    function collectLinks(node, out) {
+      if (!node.children) return;
+      for (const child of node.children) {
+        if (child.url) {
+          out.push({ title: child.title || child.url, url: child.url });
+        } else if (child.children) {
+          collectLinks(child, out);
+        }
+      }
+    }
+
+    // The roots Chrome gives are wrapper nodes ("Bookmarks bar",
+    // "Other bookmarks", etc.). We descend into them and treat each
+    // named subfolder as a group; loose links go to the loose pile.
+    function walkRoot(node) {
+      if (!node.children) return;
+      for (const child of node.children) {
+        if (child.url) {
+          loose.push({ title: child.title || child.url, url: child.url });
+        } else if (child.children) {
+          // A named folder — flatten all its descendants into one group.
+          const links = [];
+          collectLinks(child, links);
+          if (links.length > 0) {
+            groups.push({ title: child.title || 'Folder', links });
+          }
+        }
+      }
+    }
+
+    for (const root of nodes) {
+      walkRoot(root);
+    }
+    if (loose.length > 0) {
+      groups.unshift({ title: 'Loose bookmarks', links: loose, isLoose: true });
+    }
+    return groups;
+  }
+
+  /** Render the parsed groups into the picker with checkboxes. */
+  function renderImportTree(groups) {
+    importTree.innerHTML = '';
+    if (!groups || groups.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'import-empty';
+      empty.textContent = 'No bookmarks found to import.';
+      importTree.appendChild(empty);
+      return;
+    }
+
+    groups.forEach((group, gi) => {
+      const groupEl = document.createElement('div');
+      groupEl.className = 'import-group';
+
+      const header = document.createElement('label');
+      header.className = 'import-group-header';
+
+      const groupCheck = document.createElement('input');
+      groupCheck.type = 'checkbox';
+      groupCheck.className = 'import-check import-group-check';
+      groupCheck.dataset.group = String(gi);
+
+      const groupName = document.createElement('span');
+      groupName.className = 'import-group-name';
+      groupName.textContent = group.title;
+
+      const groupCount = document.createElement('span');
+      groupCount.className = 'import-group-count';
+      groupCount.textContent =
+        `${group.links.length} item${group.links.length === 1 ? '' : 's'}`;
+
+      header.appendChild(groupCheck);
+      header.appendChild(groupName);
+      header.appendChild(groupCount);
+      groupEl.appendChild(header);
+
+      // Individual links, indented under the group.
+      const linksEl = document.createElement('div');
+      linksEl.className = 'import-links';
+      group.links.forEach((link, li) => {
+        const linkLabel = document.createElement('label');
+        linkLabel.className = 'import-link';
+
+        const linkCheck = document.createElement('input');
+        linkCheck.type = 'checkbox';
+        linkCheck.className = 'import-check import-link-check';
+        linkCheck.dataset.group = String(gi);
+        linkCheck.dataset.link = String(li);
+
+        const linkName = document.createElement('span');
+        linkName.className = 'import-link-name';
+        linkName.textContent = link.title;
+
+        linkLabel.appendChild(linkCheck);
+        linkLabel.appendChild(linkName);
+        linksEl.appendChild(linkLabel);
+      });
+      groupEl.appendChild(linksEl);
+      importTree.appendChild(groupEl);
+
+      // Group checkbox toggles all its links.
+      groupCheck.addEventListener('change', () => {
+        linksEl.querySelectorAll('.import-link-check').forEach((c) => {
+          c.checked = groupCheck.checked;
+        });
+        updateImportSummary();
+      });
+    });
+
+    // Any individual link change updates the group's indeterminate state
+    // and the overall summary.
+    importTree.addEventListener('change', (e) => {
+      if (e.target instanceof HTMLElement &&
+          e.target.classList.contains('import-link-check')) {
+        const gi = e.target.dataset.group;
+        const groupCheck = importTree.querySelector(
+          `.import-group-check[data-group="${gi}"]`);
+        const linkChecks = importTree.querySelectorAll(
+          `.import-link-check[data-group="${gi}"]`);
+        const checked = [...linkChecks].filter((c) => c.checked).length;
+        if (groupCheck) {
+          groupCheck.checked = checked === linkChecks.length;
+          groupCheck.indeterminate = checked > 0 && checked < linkChecks.length;
+        }
+        updateImportSummary();
+      }
+    });
+
+    updateImportSummary();
+  }
+
+  /** Count selected items and update the summary line + confirm button. */
+  function updateImportSummary() {
+    const selected = importTree.querySelectorAll('.import-link-check:checked').length;
+    importSummary.textContent = selected > 0
+      ? `${selected} item${selected === 1 ? '' : 's'} selected`
+      : '';
+    importConfirmBtn.disabled = selected === 0;
+  }
+
+  /** Build GridTab items from the current selection and write them. */
+  async function confirmImport() {
+    if (!importParsed) return;
+
+    const newItems = [];
+    let colorIdx = 0;
+
+    importParsed.forEach((group, gi) => {
+      const selectedLinks = [];
+      group.links.forEach((link, li) => {
+        const check = importTree.querySelector(
+          `.import-link-check[data-group="${gi}"][data-link="${li}"]`);
+        if (check && check.checked) {
+          selectedLinks.push(link);
+        }
+      });
+      if (selectedLinks.length === 0) return;
+
+      const favOf = (link) => ({
+        kind: 'favorite',
+        id: generateId(),
+        title: link.title,
+        url: link.url,
+        customIcon: null,
+        createdAt: Date.now(),
+      });
+
+      if (group.isLoose) {
+        // Loose bookmarks become top-level tiles.
+        selectedLinks.forEach((link) => newItems.push(favOf(link)));
+      } else {
+        // A named folder becomes a GridTab folder with its selected
+        // links as children.
+        newItems.push({
+          kind: 'folder',
+          id: generateId(),
+          title: group.title,
+          color: IMPORT_FOLDER_COLORS[colorIdx % IMPORT_FOLDER_COLORS.length],
+          items: selectedLinks.map(favOf),
+          open: false,
+        });
+        colorIdx++;
+      }
+    });
+
+    if (newItems.length === 0) return;
+
+    const previous = JSON.parse(JSON.stringify(favorites));
+    favorites = favorites.concat(newItems);
+    const result = await saveFavorites(favorites);
+    if (!result.ok) {
+      favorites = previous;
+      const isQuota = /quota/i.test(result.error || '');
+      alert(isQuota
+        ? 'Import too large to store. Try selecting fewer items.'
+        : 'Could not import. Please try again.');
+      return;
+    }
+    render();
+    closeImportModal();
+  }
+
+  /**
+   * Entry point. Requests the bookmarks permission, reads the tree,
+   * renders the picker. Releases the permission again when the modal
+   * closes (see the close handlers below).
+   */
+  async function startBookmarkImport() {
+    let granted = false;
+    try {
+      granted = await chrome.permissions.request({ permissions: ['bookmarks'] });
+    } catch (err) {
+      granted = false;
+    }
+    if (!granted) {
+      // User declined. Nothing happens — make that clear, calmly.
+      alert('Import needs permission to read your bookmarks. ' +
+            'Nothing is changed in Chrome, and the permission is ' +
+            'released right after importing.');
+      return;
+    }
+
+    openImportModal();
+    importTree.innerHTML = '<p class="import-loading">Reading bookmarks…</p>';
+
+    try {
+      const tree = await chrome.bookmarks.getTree();
+      importParsed = parseBookmarkTree(tree);
+      renderImportTree(importParsed);
+    } catch (err) {
+      importTree.innerHTML =
+        '<p class="import-empty">Could not read bookmarks. Please try again.</p>';
+    }
+  }
+
+  // Release the bookmarks permission after the modal closes, so GridTab
+  // doesn't retain access it no longer needs. The next import re-requests.
+  async function releaseBookmarkPermission() {
+    try {
+      await chrome.permissions.remove({ permissions: ['bookmarks'] });
+    } catch (err) {
+      // Non-fatal — if removal fails the permission simply persists,
+      // which doesn't break anything.
+    }
+  }
+
+  importBookmarksBtn.addEventListener('click', startBookmarkImport);
+  importConfirmBtn.addEventListener('click', confirmImport);
+  importModal.addEventListener('click', (e) => {
+    if (e.target instanceof HTMLElement && e.target.dataset.closeImport === 'true') {
+      closeImportModal();
+      releaseBookmarkPermission();
+    }
+  });
+
+  // -----------------------------------------------------------------------
   // Event wiring
   // -----------------------------------------------------------------------
 
@@ -2063,6 +2368,7 @@
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!colorMenu.hidden) { closeColorMenu(); return; }
+    if (!importModal.hidden) { closeImportModal(); releaseBookmarkPermission(); return; }
     if (!modal.hidden) closeModal();
     else if (!settingsModal.hidden) closeSettingsModal();
   });
