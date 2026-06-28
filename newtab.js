@@ -2016,10 +2016,6 @@
   // what to copy into GridTab, then releases the permission. Never
   // modifies the user's Chrome bookmarks.
 
-  // Colors cycled through when assigning a color to each imported folder,
-  // so a multi-folder import doesn't come in as a wall of one color.
-  const IMPORT_FOLDER_COLORS = ['blue', 'green', 'amber', 'purple', 'teal', 'red'];
-
   // Holds the parsed tree between render and confirm. Ephemeral — wiped
   // when the modal closes. Nothing about the tree is persisted.
   let importParsed = null;
@@ -2128,6 +2124,30 @@
       importTree.appendChild(empty);
       return;
     }
+
+    // --- Select all / Deselect all toggle ---
+    // Grabs every folder and every loose bookmark in one click. Useful
+    // especially when a user has only loose bookmarks (or only folders)
+    // and wants everything. Does NOT expand folder previews — selecting
+    // and previewing are separate actions, and auto-expanding a large
+    // tree would make the picker unscrollable.
+    const selectAllRow = document.createElement('div');
+    selectAllRow.className = 'import-select-all';
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.type = 'button';
+    selectAllBtn.className = 'import-select-all-btn';
+    selectAllBtn.textContent = 'Select all';
+    selectAllRow.appendChild(selectAllBtn);
+    importTree.appendChild(selectAllRow);
+
+    selectAllBtn.addEventListener('click', () => {
+      const allChecks = importTree.querySelectorAll(
+        '.import-folder-check, .import-loose-check');
+      // If everything is already checked, this acts as "Deselect all".
+      const allChecked = [...allChecks].every((c) => c.checked);
+      allChecks.forEach((c) => { c.checked = !allChecked; });
+      updateImportSummary();
+    });
 
     // --- Folders section ---
     folders.forEach((folder, fi) => {
@@ -2243,6 +2263,16 @@
     }
     importSummary.textContent = parts.length ? parts.join(' and ') + ' selected' : '';
     importConfirmBtn.disabled = (folderChecks.length + looseChecks.length) === 0;
+
+    // Keep the Select all / Deselect all button label in sync with state.
+    const selectAllBtn = importTree.querySelector('.import-select-all-btn');
+    if (selectAllBtn) {
+      const allChecks = importTree.querySelectorAll(
+        '.import-folder-check, .import-loose-check');
+      const allChecked = allChecks.length > 0 &&
+        [...allChecks].every((c) => c.checked);
+      selectAllBtn.textContent = allChecked ? 'Deselect all' : 'Select all';
+    }
   }
 
   /** Build GridTab items from the current selection and write them. */
@@ -2260,9 +2290,12 @@
     });
 
     const newItems = [];
-    let colorIdx = 0;
 
     // Selected folders → GridTab folders with all their children.
+    // Imported folders use the 'default' color (the theme accent),
+    // matching what a manually-created folder defaults to. This keeps
+    // imported and hand-made folders consistent, and the user can
+    // re-color any of them afterward.
     folders.forEach((folder, fi) => {
       const check = importTree.querySelector(
         `.import-folder-check[data-folder="${fi}"]`);
@@ -2271,11 +2304,10 @@
         kind: 'folder',
         id: generateId(),
         title: folder.title,
-        color: IMPORT_FOLDER_COLORS[colorIdx % IMPORT_FOLDER_COLORS.length],
+        color: 'default',
         items: folder.links.map(favOf),
         open: false,
       });
-      colorIdx++;
     });
 
     // Selected loose bookmarks → free top-level tiles.

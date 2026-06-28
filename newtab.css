@@ -1806,6 +1806,20 @@ body.is-dragging .tile-folder.is-add-target .tile-tooltip {
   flex-direction: column;
   gap: 6px;
 }
+.import-select-all {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2px;
+}
+.import-select-all-btn {
+  font-size: 13px;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+.import-select-all-btn:hover { text-decoration: underline; }
 .import-group {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
